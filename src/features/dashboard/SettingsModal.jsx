@@ -21,9 +21,9 @@ function getInitials(fullName) {
 }
 
 export default function SettingsModal({ isOpen, onClose, userProfile, onSave }) {
-  const [name, setName] = useState(userProfile?.name || 'Hanif Abbad');
+  const [name, setName] = useState(userProfile?.name || 'Agency Owner');
   const [role, setRole] = useState(userProfile?.role || 'Agency Owner');
-  const [email, setEmail] = useState(userProfile?.email || 'hanifbad09@gmail.com');
+  const [email, setEmail] = useState(userProfile?.email || '');
   const [taskThreshold, setTaskThreshold] = useState(userProfile?.taskThreshold || 30);
   const [emailNotifications, setEmailNotifications] = useState(
     userProfile?.emailNotifications ?? true
@@ -31,9 +31,9 @@ export default function SettingsModal({ isOpen, onClose, userProfile, onSave }) 
 
   useEffect(() => {
     if (userProfile) {
-      setName(userProfile.name || 'Hanif Abbad');
+      setName(userProfile.name || 'Agency Owner');
       setRole(userProfile.role || 'Agency Owner');
-      setEmail(userProfile.email || 'hanifbad09@gmail.com');
+      setEmail(userProfile.email || '');
       setTaskThreshold(userProfile.taskThreshold || 30);
       setEmailNotifications(userProfile.emailNotifications ?? true);
     }
@@ -43,10 +43,10 @@ export default function SettingsModal({ isOpen, onClose, userProfile, onSave }) 
 
   const handleSave = () => {
     onSave({
-      name,
-      role,
-      email,
-      initials: getInitials(name),
+      name: name.trim() || 'Agency Owner',
+      role: role.trim() || 'Agency Owner',
+      email: email.trim(),
+      initials: getInitials(name.trim() || 'Agency Owner'),
       taskThreshold,
       emailNotifications,
     });
@@ -72,12 +72,12 @@ export default function SettingsModal({ isOpen, onClose, userProfile, onSave }) 
           {/* Profile Card Preview */}
           <div className="set-profile-card">
             <div className="set-avatar-circle">
-              {getInitials(name)}
+              {getInitials(name || 'Agency Owner')}
             </div>
             <div className="set-profile-info">
-              <div className="set-profile-name">{name || 'Hanif Abbad'}</div>
+              <div className="set-profile-name">{name || 'Agency Owner'}</div>
               <div className="set-profile-role">{role || 'Agency Owner'}</div>
-              <div className="set-profile-email">{email || 'hanifbad09@gmail.com'}</div>
+              <div className="set-profile-email">{email || 'admin@agencyos.app'}</div>
             </div>
           </div>
 
@@ -91,7 +91,7 @@ export default function SettingsModal({ isOpen, onClose, userProfile, onSave }) 
               className="set-field-input"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Hanif Abbad"
+              placeholder="e.g. Jane Doe"
             />
           </div>
 

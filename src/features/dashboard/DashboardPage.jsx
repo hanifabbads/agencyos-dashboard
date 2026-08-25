@@ -733,10 +733,17 @@ function Avatar({ initials, gradient, size = 32 }) {
   );
 }
 
+function getInitials(fullName) {
+  if (!fullName) return 'AO';
+  const parts = fullName.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
 /* ─────────────────────────────────────────────
    MAIN COMPONENT
 ───────────────────────────────────────────── */
-export default function DashboardPage({ onLogout }) {
+export default function DashboardPage({ onLogout, currentUser }) {
   const [activeNav, setActiveNav] = useState('dashboard');
   const [selectedProject, setSelectedProject] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -745,14 +752,47 @@ export default function DashboardPage({ onLogout }) {
   const [isNewProjectOpen, setIsNewProjectOpen] = useState(false);
   const [allProjectsList, setAllProjectsList] = useState(all300Projects);
   const [activityList, setActivityList] = useState(recentActivity);
-  const [userProfile, setUserProfile] = useState({
-    name: 'Hanif Abbad',
-    role: 'Agency Owner',
-    email: 'hanifbad09@gmail.com',
-    initials: 'HA',
-    taskThreshold: 30,
-    emailNotifications: true,
+  const [userProfile, setUserProfile] = useState(() => {
+    try {
+      const stored = localStorage.getItem('agencyos_user_profile');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed?.name) return parsed;
+      }
+    } catch (e) {
+      console.warn('Failed to parse user profile from localStorage:', e);
+    }
+    const displayName = currentUser?.displayName;
+    const email = currentUser?.email || 'admin@agencyos.app';
+    const fallbackName = displayName || (currentUser?.email ? currentUser.email.split('@')[0] : 'Agency Owner');
+    return {
+      name: fallbackName,
+      role: 'Agency Owner',
+      email: email,
+      initials: getInitials(fallbackName),
+      taskThreshold: 30,
+      emailNotifications: true,
+    };
   });
+
+  React.useEffect(() => {
+    if (currentUser?.displayName) {
+      setUserProfile((prev) => {
+        if (prev.name === currentUser.displayName && prev.email === currentUser.email) return prev;
+        const updated = {
+          ...prev,
+          name: currentUser.displayName,
+          email: currentUser.email || prev.email,
+          initials: getInitials(currentUser.displayName),
+        };
+        try {
+          localStorage.setItem('agencyos_user_profile', JSON.stringify(updated));
+        } catch (e) {}
+        return updated;
+      });
+    }
+  }, [currentUser]);
+
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -1791,7 +1831,14 @@ export default function DashboardPage({ onLogout }) {
           isOpen={isSettingsOpen}
           onClose={() => setIsSettingsOpen(false)}
           userProfile={userProfile}
-          onSave={(updated) => setUserProfile(updated)}
+          onSave={(updated) => {
+            setUserProfile(updated);
+            try {
+              localStorage.setItem('agencyos_user_profile', JSON.stringify(updated));
+            } catch (e) {
+              console.warn('Failed to save profile:', e);
+            }
+          }}
         />
 
         {/* ── LOGOUT CONFIRMATION POPUP MODAL ── */}

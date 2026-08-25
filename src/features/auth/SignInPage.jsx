@@ -60,6 +60,29 @@ export default function SignInPage({ onNavigateToSignUp, onSignInSuccess }) {
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      const displayName = user.displayName || (email ? email.split('@')[0] : 'Agency Owner');
+      const parts = displayName.trim().split(/\s+/);
+      const initials = parts.length === 1
+        ? parts[0].substring(0, 2).toUpperCase()
+        : (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+
+      try {
+        const stored = localStorage.getItem('agencyos_user_profile');
+        const existing = stored ? JSON.parse(stored) : null;
+        localStorage.setItem(
+          'agencyos_user_profile',
+          JSON.stringify({
+            name: user.displayName || existing?.name || displayName,
+            role: existing?.role || 'Agency Owner',
+            email: user.email || email,
+            initials: user.displayName ? initials : (existing?.initials || initials),
+            taskThreshold: existing?.taskThreshold || 30,
+            emailNotifications: existing?.emailNotifications ?? true,
+          })
+        );
+      } catch (e) {}
+
       if (onSignInSuccess) {
         onSignInSuccess(userCredential.user);
       }
@@ -91,6 +114,27 @@ export default function SignInPage({ onNavigateToSignUp, onSignInSuccess }) {
     try {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      const displayName = user.displayName || 'Google User';
+      const parts = displayName.trim().split(/\s+/);
+      const initials = parts.length === 1
+        ? parts[0].substring(0, 2).toUpperCase()
+        : (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+
+      try {
+        localStorage.setItem(
+          'agencyos_user_profile',
+          JSON.stringify({
+            name: displayName,
+            role: 'Agency Owner',
+            email: user.email || '',
+            initials: initials,
+            taskThreshold: 30,
+            emailNotifications: true,
+          })
+        );
+      } catch (e) {}
+
       if (onSignInSuccess) {
         onSignInSuccess(result.user);
       }
@@ -107,6 +151,19 @@ export default function SignInPage({ onNavigateToSignUp, onSignInSuccess }) {
           email: 'google.user@agencyos.app',
           uid: 'google-demo-uid',
         };
+        try {
+          localStorage.setItem(
+            'agencyos_user_profile',
+            JSON.stringify({
+              name: 'Google User',
+              role: 'Agency Owner',
+              email: mockUser.email,
+              initials: 'GU',
+              taskThreshold: 30,
+              emailNotifications: true,
+            })
+          );
+        } catch (e) {}
         if (onSignInSuccess) {
           onSignInSuccess(mockUser);
         }
@@ -122,6 +179,27 @@ export default function SignInPage({ onNavigateToSignUp, onSignInSuccess }) {
     try {
       const provider = new OAuthProvider('apple.com');
       const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      const displayName = user.displayName || 'Apple User';
+      const parts = displayName.trim().split(/\s+/);
+      const initials = parts.length === 1
+        ? parts[0].substring(0, 2).toUpperCase()
+        : (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+
+      try {
+        localStorage.setItem(
+          'agencyos_user_profile',
+          JSON.stringify({
+            name: displayName,
+            role: 'Agency Owner',
+            email: user.email || '',
+            initials: initials,
+            taskThreshold: 30,
+            emailNotifications: true,
+          })
+        );
+      } catch (e) {}
+
       if (onSignInSuccess) {
         onSignInSuccess(result.user);
       }

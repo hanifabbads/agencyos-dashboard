@@ -69,6 +69,7 @@ export default function App() {
     }
     try {
       localStorage.removeItem(AUTH_KEY);
+      localStorage.removeItem('agencyos_user_profile');
     } catch (e) {
       console.error('Failed to clear auth from storage:', e);
     }
@@ -77,7 +78,7 @@ export default function App() {
   };
 
   if (currentView === 'dashboard') {
-    return <DashboardPage onLogout={handleLogout} />;
+    return <DashboardPage onLogout={handleLogout} currentUser={currentUser} />;
   }
 
   if (currentView === 'sign-up') {

@@ -62,17 +62,46 @@ export default function SignUpPage({ onNavigateToSignIn, onSignUpSuccess }) {
 
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      if (username.trim()) {
+      const cleanUsername = username.trim();
+      if (cleanUsername) {
         try {
           await updateProfile(userCredential.user, {
-            displayName: username.trim(),
+            displayName: cleanUsername,
           });
         } catch (profileErr) {
           console.warn('Profile update error:', profileErr);
         }
       }
+
+      const displayName = cleanUsername || userCredential.user.displayName || 'Agency Owner';
+      const parts = displayName.trim().split(/\s+/);
+      const initials = parts.length === 1
+        ? parts[0].substring(0, 2).toUpperCase()
+        : (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+
+      try {
+        localStorage.setItem(
+          'agencyos_user_profile',
+          JSON.stringify({
+            name: displayName,
+            role: 'Agency Owner',
+            email: email,
+            initials: initials,
+            taskThreshold: 30,
+            emailNotifications: true,
+          })
+        );
+      } catch (storageErr) {
+        console.warn('LocalStorage error:', storageErr);
+      }
+
+      const finalUser = {
+        ...userCredential.user,
+        displayName: displayName,
+      };
+
       if (onSignUpSuccess) {
-        onSignUpSuccess(userCredential.user);
+        onSignUpSuccess(finalUser);
       }
     } catch (err) {
       console.error('Firebase sign-up error:', err);
@@ -98,6 +127,28 @@ export default function SignUpPage({ onNavigateToSignIn, onSignUpSuccess }) {
     try {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
+      const displayName = result.user.displayName || 'Google User';
+      const parts = displayName.trim().split(/\s+/);
+      const initials = parts.length === 1
+        ? parts[0].substring(0, 2).toUpperCase()
+        : (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+
+      try {
+        localStorage.setItem(
+          'agencyos_user_profile',
+          JSON.stringify({
+            name: displayName,
+            role: 'Agency Owner',
+            email: result.user.email || '',
+            initials: initials,
+            taskThreshold: 30,
+            emailNotifications: true,
+          })
+        );
+      } catch (storageErr) {
+        console.warn('LocalStorage error:', storageErr);
+      }
+
       if (onSignUpSuccess) {
         onSignUpSuccess(result.user);
       }
@@ -114,6 +165,19 @@ export default function SignUpPage({ onNavigateToSignIn, onSignUpSuccess }) {
           email: 'google.user@agencyos.app',
           uid: 'google-demo-uid',
         };
+        try {
+          localStorage.setItem(
+            'agencyos_user_profile',
+            JSON.stringify({
+              name: 'Google User',
+              role: 'Agency Owner',
+              email: mockUser.email,
+              initials: 'GU',
+              taskThreshold: 30,
+              emailNotifications: true,
+            })
+          );
+        } catch (e) {}
         if (onSignUpSuccess) {
           onSignUpSuccess(mockUser);
         }
@@ -129,6 +193,26 @@ export default function SignUpPage({ onNavigateToSignIn, onSignUpSuccess }) {
     try {
       const provider = new OAuthProvider('apple.com');
       const result = await signInWithPopup(auth, provider);
+      const displayName = result.user.displayName || 'Apple User';
+      const parts = displayName.trim().split(/\s+/);
+      const initials = parts.length === 1
+        ? parts[0].substring(0, 2).toUpperCase()
+        : (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+
+      try {
+        localStorage.setItem(
+          'agencyos_user_profile',
+          JSON.stringify({
+            name: displayName,
+            role: 'Agency Owner',
+            email: result.user.email || '',
+            initials: initials,
+            taskThreshold: 30,
+            emailNotifications: true,
+          })
+        );
+      } catch (e) {}
+
       if (onSignUpSuccess) {
         onSignUpSuccess(result.user);
       }
