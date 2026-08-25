@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { auth } from './firebase';
 import LandingPage from './features/landing/LandingPage';
 import SignInPage from './features/auth/SignInPage';
 import SignUpPage from './features/auth/SignUpPage';
@@ -7,6 +9,7 @@ import DashboardPage from './features/dashboard/DashboardPage';
 const AUTH_KEY = 'agencyos_auth';
 
 export default function App() {
+  const [currentUser, setCurrentUser] = useState(null);
   const [currentView, setCurrentView] = useState(() => {
     try {
       const stored = localStorage.getItem(AUTH_KEY);
@@ -20,10 +23,26 @@ export default function App() {
   });
 
   useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      if (user) {
+        try {
+          localStorage.setItem(AUTH_KEY, 'true');
+        } catch (e) {
+          console.error('Failed to write auth to storage:', e);
+        }
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, [currentView]);
 
-  const handleSignInSuccess = () => {
+  const handleSignInSuccess = (user) => {
+    setCurrentUser(user || auth.currentUser);
     try {
       localStorage.setItem(AUTH_KEY, 'true');
     } catch (e) {
@@ -32,7 +51,8 @@ export default function App() {
     setCurrentView('dashboard');
   };
 
-  const handleSignUpSuccess = () => {
+  const handleSignUpSuccess = (user) => {
+    setCurrentUser(user || auth.currentUser);
     try {
       localStorage.setItem(AUTH_KEY, 'true');
     } catch (e) {
@@ -41,12 +61,18 @@ export default function App() {
     setCurrentView('dashboard');
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (e) {
+      console.error('Firebase sign-out error:', e);
+    }
     try {
       localStorage.removeItem(AUTH_KEY);
     } catch (e) {
       console.error('Failed to clear auth from storage:', e);
     }
+    setCurrentUser(null);
     setCurrentView('landing');
   };
 
