@@ -1685,63 +1685,6 @@ body {
 }
 
 /* ── Deadlines list ──────────────────────────────────────────────────────── */
-.db-deadlines-card { }
-
-.db-deadlines-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.db-deadline-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.db-deadline-badge {
-  width: 36px;
-  height: 36px;
-  border-radius: 9999px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'Geist', sans-serif;
-  font-size: 11px;
-  font-weight: 700;
-  flex-shrink: 0;
-}
-
-.db-deadline-name {
-  font-family: 'Geist', sans-serif;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-primary);
-  line-height: 1.3;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 200px;
-}
-
-.db-table-date {
-  font-family: 'Geist', sans-serif;
-  font-size: 12px;
-  color: var(--text-secondary);
-  white-space: nowrap;
-}
-
-.db-table-budget {
-  font-family: 'Geist', sans-serif;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-primary);
-  white-space: nowrap;
-}
-
-/* ── Deadlines list ──────────────────────────────────────────────────────── */
-.db-deadlines-card { }
-
 .db-deadlines-list {
   display: flex;
   flex-direction: column;
@@ -1783,8 +1726,6 @@ body {
 }
 
 /* ── Team workload ───────────────────────────────────────────────────────── */
-.db-workload-card { }
-
 .db-workload-list {
   display: flex;
   flex-direction: column;
@@ -1826,8 +1767,6 @@ body {
 }
 
 /* ── Activity feed ───────────────────────────────────────────────────────── */
-.db-activity-card { }
-
 .db-activity-list {
   display: flex;
   flex-direction: column;
