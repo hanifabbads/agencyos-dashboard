@@ -462,6 +462,174 @@ body {
   background-color: var(--bg-tertiary);
 }
 
+/* Mobile Auth Brand Logo */
+.mobile-auth-brand {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 1.75rem;
+}
+
+.mobile-auth-brand-name {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+/* ==========================================================================
+   AUTH PAGES — RESPONSIVE DESIGN (TABLET & MOBILE)
+   ========================================================================== */
+
+/* ── Tablet Landscape / Medium Desktop (max-width: 1024px) ── */
+@media (max-width: 1024px) {
+  .hero-section {
+    padding: 2.5rem 2rem;
+  }
+
+  .hero-title {
+    font-size: 2.2rem;
+    line-height: 1.2;
+    margin-bottom: 1rem;
+  }
+
+  .hero-description {
+    font-size: 0.9375rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .hero-features {
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .feature-item {
+    font-size: 0.875rem;
+  }
+
+  .form-section {
+    padding: 2rem 1.75rem;
+  }
+
+  .form-wrapper {
+    max-width: 360px;
+  }
+
+  .form-header {
+    margin-bottom: 1.75rem;
+  }
+
+  .form-title {
+    font-size: 1.75rem;
+  }
+}
+
+/* ── Tablet Portrait & Mobile (max-width: 860px) ── */
+@media (max-width: 860px) {
+  .auth-container {
+    flex-direction: column;
+    height: auto;
+    min-height: 100vh;
+    width: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    background-color: var(--bg-primary);
+  }
+
+  .hero-section {
+    display: none;
+  }
+
+  .mobile-auth-brand {
+    display: flex;
+  }
+
+  .form-section {
+    flex: 1;
+    width: 100%;
+    min-height: 100vh;
+    padding: 3.5rem 1.5rem 2.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    overflow-y: visible;
+  }
+
+  .form-wrapper {
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+
+  .theme-toggle-btn {
+    top: 1rem;
+    right: 1rem;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.75rem;
+  }
+
+  .form-title {
+    font-size: 1.75rem;
+  }
+
+  .form-subtitle {
+    font-size: 0.875rem;
+  }
+
+  .form-input {
+    height: 46px;
+    font-size: 16px; /* Prevents auto-zoom on mobile browsers */
+  }
+
+  .submit-button {
+    height: 46px;
+    font-size: 0.95rem;
+  }
+
+  .social-auth-btn {
+    height: 44px;
+    font-size: 0.875rem;
+  }
+}
+
+/* ── Small Mobile Screens (max-width: 480px) ── */
+@media (max-width: 480px) {
+  .form-section {
+    padding: 3rem 1.125rem 2rem;
+  }
+
+  .form-wrapper {
+    max-width: 100%;
+  }
+
+  .form-header {
+    margin-bottom: 1.5rem;
+  }
+
+  .form-title {
+    font-size: 1.625rem;
+  }
+
+  .auth-form {
+    gap: 1.15rem;
+  }
+
+  .social-buttons-container {
+    margin-top: 1.25rem;
+    gap: 10px;
+  }
+
+  .form-footer {
+    margin-top: 1.5rem;
+  }
+
+  .mobile-auth-brand {
+    margin-bottom: 1.25rem;
+  }
+}
+
 /* ==========================================================================
    DASHBOARD — Design System Driven (db-* namespace)
    All values reference CSS custom properties (design tokens).

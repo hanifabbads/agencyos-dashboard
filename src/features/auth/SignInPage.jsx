@@ -204,6 +204,16 @@ export default function SignInPage({ onNavigateToSignUp, onSignInSuccess }) {
         </button>
 
         <div className="form-wrapper">
+          <div className="mobile-auth-brand">
+            <svg width="28" height="28" viewBox="0 0 36 36" fill="none">
+              <rect width="36" height="36" rx="8" fill="#0C61CF" />
+              <rect x="8" y="14" width="4" height="14" rx="2" fill="white" />
+              <rect x="16" y="8" width="4" height="20" rx="2" fill="white" />
+              <rect x="24" y="18" width="4" height="10" rx="2" fill="white" />
+            </svg>
+            <span className="mobile-auth-brand-name">AgencyOS</span>
+          </div>
+
           <div className="form-header">
             <h2 className="form-title">Welcome back.</h2>
             <p className="form-subtitle">Sign in to your AgencyOS workspace.</p>
