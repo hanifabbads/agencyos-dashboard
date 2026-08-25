@@ -7285,12 +7285,12 @@ body {
 }
 
 .db-logout-modal {
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.4);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-radius: 24px;
   padding: 32px 24px 28px 24px;
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.5);
   box-shadow: 0px 4px 25px 0px rgba(0, 0, 0, 0.15);
   width: 100%;
   max-width: 400px;
@@ -7304,7 +7304,7 @@ body {
 }
 
 [data-theme="dark"] .db-logout-modal {
-  background: rgba(20, 22, 27, 0.5);
+  background: rgba(20, 22, 27, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 0px 4px 25px 0px rgba(0, 0, 0, 0.4);
 }
