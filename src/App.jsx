@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import LandingPage from './features/landing/LandingPage';
 import SignInPage from './features/auth/SignInPage';
 import SignUpPage from './features/auth/SignUpPage';
 import DashboardPage from './features/dashboard/DashboardPage';
@@ -15,8 +16,12 @@ export default function App() {
     } catch (e) {
       console.error('Failed to read auth from storage:', e);
     }
-    return 'sign-in';
+    return 'landing';
   });
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [currentView]);
 
   const handleSignInSuccess = () => {
     try {
@@ -42,7 +47,7 @@ export default function App() {
     } catch (e) {
       console.error('Failed to clear auth from storage:', e);
     }
-    setCurrentView('sign-in');
+    setCurrentView('landing');
   };
 
   if (currentView === 'dashboard') {
@@ -51,17 +56,24 @@ export default function App() {
 
   if (currentView === 'sign-up') {
     return (
-      <SignUpPage 
+      <SignUpPage
         onNavigateToSignIn={() => setCurrentView('sign-in')}
         onSignUpSuccess={handleSignUpSuccess}
       />
     );
   }
 
+  if (currentView === 'sign-in') {
+    return (
+      <SignInPage
+        onNavigateToSignUp={() => setCurrentView('sign-up')}
+        onSignInSuccess={handleSignInSuccess}
+      />
+    );
+  }
+
+  // Default: landing page
   return (
-    <SignInPage 
-      onNavigateToSignUp={() => setCurrentView('sign-up')}
-      onSignInSuccess={handleSignInSuccess}
-    />
+    <LandingPage onGetStarted={() => setCurrentView('sign-in')} />
   );
 }
