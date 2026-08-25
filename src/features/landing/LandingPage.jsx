@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import agencyosLogo from '../../assets/agencyos-logo.png';
+import heroDashboardImg from '../../assets/hero-dashboard.png';
+import dashboardDarkImg from '../../assets/dashboard-dark.png';
 import './LandingPage.css';
 
 // ─── SVG ICONS (inline, no extra dep) ─────────────────────
@@ -130,6 +132,20 @@ const IconCheckCircle = () => (
   </svg>
 );
 
+const IconTarget = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" />
+    <circle cx="12" cy="12" r="6" />
+    <circle cx="12" cy="12" r="2" />
+  </svg>
+);
+
+const IconShield = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+  </svg>
+);
+
 // ─── SCROLL REVEAL HOOK ────────────────────────────────────
 function useReveal() {
   const ref = useRef(null);
@@ -159,209 +175,110 @@ const CheckIcon = () => (
   </span>
 );
 
-// ─── AUTHENTIC DASHBOARD MOCKUP (Light & Dark) ─────────────
+// ─── DASHBOARD IMAGE MOCKUP (Light & Dark) ────────────────
 const DashboardMockup = ({ theme = 'light' }) => {
   const isDark = theme === 'dark';
+  const src = isDark ? dashboardDarkImg : heroDashboardImg;
   return (
-    <div className={`lp-hdm-root ${isDark ? 'theme-dark' : 'theme-light'}`}>
-      {/* SIDEBAR */}
-      <aside className="lp-hdm-sidebar">
-        <div className="lp-hdm-sidebar-top">
-          <div className="lp-hdm-brand">
-            <IconLogo size={24} />
-            <span className="lp-hdm-brand-name">AgencyOS</span>
+    <div className="lp-hero-image-wrapper">
+      <img
+        src={src}
+        alt={`AgencyOS Operations Dashboard ${isDark ? 'Dark Mode' : 'Light Mode'}`}
+        className="lp-hero-dashboard-img"
+        draggable={false}
+        onContextMenu={(e) => e.preventDefault()}
+        onDragStart={(e) => e.preventDefault()}
+      />
+    </div>
+  );
+};
+
+const HeroDashboardMockup = () => <DashboardMockup theme="light" />;
+
+// ─── INTERACTIVE COMPARE LIGHT & DARK MODE SLIDER ──────────
+const CompareModeSlider = () => {
+  const [sliderPos, setSliderPos] = useState(50);
+  const containerRef = useRef(null);
+
+  const handleMove = (clientX) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const pct = Math.max(0, Math.min(100, (x / rect.width) * 100));
+    setSliderPos(pct);
+  };
+
+  const handleMouseMove = (e) => {
+    handleMove(e.clientX);
+  };
+
+  const handleTouchMove = (e) => {
+    if (e.touches && e.touches[0]) {
+      handleMove(e.touches[0].clientX);
+    }
+  };
+
+  return (
+    <div className="lp-compare-widget">
+      <div className="lp-browser-chrome lp-compare-chrome">
+        <div className="lp-browser-bar">
+          <div className="lp-browser-dots">
+            <div className="lp-browser-dot" />
+            <div className="lp-browser-dot" />
+            <div className="lp-browser-dot" />
           </div>
-          <nav className="lp-hdm-nav">
-            <div className="lp-hdm-nav-item is-active">
-              <span className="lp-hdm-nav-icon"><IconGrid /></span>
-              <span>Dashboard</span>
-            </div>
-            <div className="lp-hdm-nav-item">
-              <span className="lp-hdm-nav-icon"><IconBriefcase /></span>
-              <span>Projects</span>
-            </div>
-            <div className="lp-hdm-nav-item">
-              <span className="lp-hdm-nav-icon"><IconUsers /></span>
-              <span>Team</span>
-            </div>
-            <div className="lp-hdm-nav-item">
-              <span className="lp-hdm-nav-icon"><IconClock /></span>
-              <span>Deadlines</span>
-              <span className="lp-hdm-nav-badge">7</span>
-            </div>
-          </nav>
+          <div className="lp-browser-url">agencyos.app/dashboard</div>
         </div>
-        <div className="lp-hdm-sidebar-bottom">
-          <div className="lp-hdm-user-card">
-            <div className="lp-hdm-user-avatar">HA</div>
-            <div className="lp-hdm-user-info">
-              <div className="lp-hdm-user-name">Hanif Abbads</div>
-              <div className="lp-hdm-user-role">Operations Lead</div>
-            </div>
-          </div>
-        </div>
-      </aside>
 
-      {/* MAIN AREA */}
-      <div className="lp-hdm-main">
-        {/* HEADER */}
-        <header className="lp-hdm-header">
-          <div className="lp-hdm-page-title">Dashboard</div>
-          <div className="lp-hdm-header-right">
-            <div className="lp-hdm-search">
-              <span className="lp-hdm-search-icon">🔍</span>
-              <span className="lp-hdm-search-placeholder">Search projects, clients...</span>
-            </div>
-            <div className="lp-hdm-header-actions">
-              <div className="lp-hdm-icon-btn"><IconBell /><span className="lp-hdm-notif-dot" /></div>
-              <div className="lp-hdm-btn-primary">+ New Project</div>
-            </div>
-          </div>
-        </header>
+        <div
+          ref={containerRef}
+          className="lp-compare-container"
+          onMouseMove={handleMouseMove}
+          onTouchMove={handleTouchMove}
+          onContextMenu={(e) => e.preventDefault()}
+        >
+          {/* Dark Mode Background (Base) */}
+          <img
+            src={dashboardDarkImg}
+            alt="AgencyOS Operations Dashboard Dark Mode"
+            className="lp-compare-base-img"
+            draggable={false}
+            onContextMenu={(e) => e.preventDefault()}
+            onDragStart={(e) => e.preventDefault()}
+          />
 
-        {/* CONTENT BODY */}
-        <div className="lp-hdm-content">
-          {/* ROW 1: TOP 4 METRICS */}
-          <div className="lp-hdm-metrics-row">
-            <div className="lp-hdm-metric-card">
-              <div className="lp-hdm-metric-label">Active Projects</div>
-              <div className="lp-hdm-metric-val-row">
-                <span className="lp-hdm-metric-val">12</span>
-                <span className="lp-hdm-metric-tag tag-risk">3 at risk</span>
-              </div>
-              <div className="lp-hdm-metric-sub">+2 vs last month</div>
-            </div>
-            <div className="lp-hdm-metric-card">
-              <div className="lp-hdm-metric-label">Team Capacity</div>
-              <div className="lp-hdm-metric-val-row">
-                <span className="lp-hdm-metric-val">87%</span>
-                <span className="lp-hdm-metric-tag tag-blue">High</span>
-              </div>
-              <div className="lp-hdm-metric-bar"><div className="lp-hdm-bar-fill" style={{ width: '87%' }} /></div>
-            </div>
-            <div className="lp-hdm-metric-card">
-              <div className="lp-hdm-metric-label">Deadlines This Week</div>
-              <div className="lp-hdm-metric-val-row">
-                <span className="lp-hdm-metric-val">5</span>
-                <span className="lp-hdm-metric-tag tag-warning">2 due today</span>
-              </div>
-              <div className="lp-hdm-metric-sub">Across 4 clients</div>
-            </div>
-            <div className="lp-hdm-metric-card">
-              <div className="lp-hdm-metric-label">Monthly Revenue</div>
-              <div className="lp-hdm-metric-val-row">
-                <span className="lp-hdm-metric-val">Rp 845 jt</span>
-              </div>
-              <div className="lp-hdm-metric-sub tag-success-text">↗ +12% vs last month</div>
-            </div>
+          {/* Light Mode Overlay (Clipped) */}
+          <div
+            className="lp-compare-overlay"
+            style={{ clipPath: `inset(0 ${100 - sliderPos}% 0 0)` }}
+          >
+            <img
+              src={heroDashboardImg}
+              alt="AgencyOS Operations Dashboard Light Mode"
+              className="lp-compare-overlay-img"
+              draggable={false}
+              onContextMenu={(e) => e.preventDefault()}
+              onDragStart={(e) => e.preventDefault()}
+            />
           </div>
 
-          {/* ROW 2: CHARTS */}
-          <div className="lp-hdm-charts-row">
-            <div className="lp-hdm-card lp-hdm-chart-revenue">
-              <div className="lp-hdm-card-header">
-                <div>
-                  <div className="lp-hdm-card-title">Revenue Overview</div>
-                  <div className="lp-hdm-card-sub">Collected vs outstanding — last 6 months</div>
-                </div>
-                <div className="lp-hdm-chart-legend">
-                  <span className="lp-hdm-dot dot-blue" /> Revenue
-                  <span className="lp-hdm-dot dot-amber" style={{ marginLeft: 8 }} /> Outstanding
-                </div>
-              </div>
-              <div className="lp-hdm-bar-chart">
-                {[
-                  { month: 'Jan', rev: 45, out: 15 },
-                  { month: 'Feb', rev: 60, out: 20 },
-                  { month: 'Mar', rev: 50, out: 12 },
-                  { month: 'Apr', rev: 75, out: 25 },
-                  { month: 'May', rev: 68, out: 18 },
-                  { month: 'Jun', rev: 92, out: 30 },
-                ].map((b, i) => (
-                  <div className="lp-hdm-bar-group" key={i}>
-                    <div className="lp-hdm-bars-pair">
-                      <div className="lp-hdm-bar bar-rev" style={{ height: `${b.rev}%` }} />
-                      <div className="lp-hdm-bar bar-out" style={{ height: `${b.out}%` }} />
-                    </div>
-                    <span className="lp-hdm-bar-month">{b.month}</span>
-                  </div>
-                ))}
-              </div>
+          {/* Vertical Divider Line with handle */}
+          <div
+            className="lp-compare-divider-line"
+            style={{ left: `${sliderPos}%` }}
+          >
+            <div className="lp-compare-handle-circle">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#181D27" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M8.5 7.5L4 12l4.5 4.5" />
+                <path d="M15.5 7.5L20 12l-4.5 4.5" />
+              </svg>
             </div>
-
-            <div className="lp-hdm-card lp-hdm-chart-category">
-              <div className="lp-hdm-card-title">By Category</div>
-              <div className="lp-hdm-card-sub">Project mix & revenue</div>
-              <div className="lp-hdm-cat-list">
-                {[
-                  { name: 'Brand Identity', pct: '40%', rev: 'Rp 338jt', color: isDark ? '#3A7FD8' : '#0C61CF' },
-                  { name: 'Mobile App', pct: '30%', rev: 'Rp 253jt', color: '#10B981' },
-                  { name: 'Web Dev', pct: '20%', rev: 'Rp 169jt', color: '#F59E0B' },
-                  { name: 'Marketing', pct: '10%', rev: 'Rp 85jt', color: '#8B5CF6' },
-                ].map((c, i) => (
-                  <div className="lp-hdm-cat-row" key={i}>
-                    <span className="lp-hdm-dot" style={{ background: c.color }} />
-                    <span className="lp-hdm-cat-name">{c.name}</span>
-                    <span className="lp-hdm-cat-pct">{c.pct}</span>
-                    <span className="lp-hdm-cat-rev">{c.rev}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* ROW 3: ACTIVE PROJECTS TABLE */}
-          <div className="lp-hdm-card lp-hdm-table-card">
-            <div className="lp-hdm-card-header">
-              <div>
-                <div className="lp-hdm-card-title">Active Projects</div>
-                <div className="lp-hdm-card-sub">Highest-priority engagements</div>
-              </div>
-              <div className="lp-hdm-view-all">View All →</div>
-            </div>
-            <table className="lp-hdm-table">
-              <thead>
-                <tr>
-                  <th>Project</th>
-                  <th>Category</th>
-                  <th>Status</th>
-                  <th>Progress</th>
-                  <th>Deadline</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  { name: 'Tokopedia Brand Identity', client: 'PT Tokopedia', cat: 'Brand Identity', status: 'Active', sCls: 'tag-active', prog: 72, date: '15 Mar 2026' },
-                  { name: 'Mandiri Mobile App UX', client: 'Bank Mandiri', cat: 'Mobile App', status: 'At Risk', sCls: 'tag-risk', prog: 45, date: '28 Feb 2026' },
-                  { name: 'Pegadaian UX Redesign', client: 'PT Pegadaian', cat: 'Web Dev', status: 'Active', sCls: 'tag-active', prog: 88, date: '10 Mar 2026' },
-                  { name: 'Bukalapak Campaign Engine', client: 'Bukalapak', cat: 'Marketing', status: 'In Review', sCls: 'tag-blue', prog: 95, date: '04 Mar 2026' },
-                ].map((p, i) => (
-                  <tr key={i}>
-                    <td>
-                      <div className="lp-hdm-proj-name">{p.name}</div>
-                      <div className="lp-hdm-proj-client">{p.client}</div>
-                    </td>
-                    <td><span className="lp-hdm-cat-badge">{p.cat}</span></td>
-                    <td><span className={`lp-hdm-status-badge ${p.sCls}`}>{p.status}</span></td>
-                    <td>
-                      <div className="lp-hdm-table-prog">
-                        <div className="lp-hdm-table-prog-bar"><div className="lp-hdm-bar-fill" style={{ width: `${p.prog}%` }} /></div>
-                        <span>{p.prog}%</span>
-                      </div>
-                    </td>
-                    <td className="lp-hdm-table-date">{p.date}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
         </div>
       </div>
     </div>
   );
 };
-
-const HeroDashboardMockup = () => <DashboardMockup theme="light" />;
 
 // ─── FEATURE SHOWCASE UI MOCKS ──────────────────────────────
 const ProjectPipelineUI = () => (
@@ -520,6 +437,7 @@ export default function LandingPage({ onGetStarted }) {
   const revealHiw        = useReveal();
   const revealExperience = useReveal();
   const revealPreview    = useReveal();
+  const revealBenefits   = useReveal();
   const revealCta        = useReveal();
 
   return (
@@ -537,7 +455,7 @@ export default function LandingPage({ onGetStarted }) {
           <div className="lp-nav-links">
             <button className="lp-nav-link" onClick={() => scrollTo('lp-features')}>Features</button>
             <button className="lp-nav-link" onClick={() => scrollTo('lp-hiw')}>How it works</button>
-            <button className="lp-nav-link" onClick={() => scrollTo('lp-experience')}>Benefits</button>
+            <button className="lp-nav-link" onClick={() => scrollTo('lp-benefits')}>Benefits</button>
           </div>
 
           {/* Desktop CTA */}
@@ -565,7 +483,7 @@ export default function LandingPage({ onGetStarted }) {
       <div className={`lp-mobile-menu${mobileOpen ? ' open' : ''}`}>
         <button className="lp-mobile-link" onClick={() => scrollTo('lp-features')}>Features</button>
         <button className="lp-mobile-link" onClick={() => scrollTo('lp-hiw')}>How it works</button>
-        <button className="lp-mobile-link" onClick={() => scrollTo('lp-experience')}>Benefits</button>
+        <button className="lp-mobile-link" onClick={() => scrollTo('lp-benefits')}>Benefits</button>
         <div className="lp-mobile-cta">
           <button
             className="lp-nav-login-btn"
@@ -915,50 +833,65 @@ export default function LandingPage({ onGetStarted }) {
             ))}
           </div>
 
-          {/* Comparison of Light Mode (Left) & Dark Mode (Right) */}
-          <div className="lp-preview-comparison">
-            {/* LEFT: LIGHT MODE */}
-            <div className="lp-comparison-col">
-              <div className="lp-comparison-badge badge-light">
-                <span className="lp-badge-title">☀️ Light Mode</span>
-                <span className="lp-badge-tag">Default</span>
-              </div>
-              <div className="lp-comparison-window window-light">
-                <div className="lp-browser-bar">
-                  <div className="lp-browser-dots">
-                    <div className="lp-browser-dot" />
-                    <div className="lp-browser-dot" />
-                    <div className="lp-browser-dot" />
-                  </div>
-                  <div className="lp-browser-url">agencyos.app/dashboard</div>
-                </div>
-                <DashboardMockup theme="light" />
-              </div>
-            </div>
+          {/* Interactive Light & Dark Mode Hover Comparison */}
+          <CompareModeSlider />
+        </div>
+      </section>
 
-            {/* RIGHT: DARK MODE */}
-            <div className="lp-comparison-col">
-              <div className="lp-comparison-badge badge-dark">
-                <span className="lp-badge-title">🌙 Dark Mode</span>
-                <span className="lp-badge-tag">Built-in</span>
-              </div>
-              <div className="lp-comparison-window window-dark">
-                <div className="lp-browser-bar dark-bar">
-                  <div className="lp-browser-dots">
-                    <div className="lp-browser-dot" />
-                    <div className="lp-browser-dot" />
-                    <div className="lp-browser-dot" />
-                  </div>
-                  <div className="lp-browser-url dark-url">agencyos.app/dashboard</div>
+      {/* ── 13. BENEFITS SECTION ───────────────────────── */}
+      <section className="lp-benefits" id="lp-benefits">
+        <div className="lp-container">
+          <div className="lp-benefits-header lp-reveal" ref={revealBenefits}>
+            <span className="lp-label">Benefits</span>
+            <h2 className="lp-heading-h2">What changes when you switch</h2>
+          </div>
+
+          <div className="lp-benefits-grid">
+            {[
+              {
+                Icon: IconClock,
+                title: 'Save 5+ hours/week',
+                desc: 'No more hunting through spreadsheets and chat logs to find project status.',
+              },
+              {
+                Icon: IconWarning,
+                title: 'Catch risks early',
+                desc: 'Automatic alerts flag overdue work before clients notice.',
+              },
+              {
+                Icon: IconTrendUp,
+                title: 'Grow with confidence',
+                desc: 'Revenue trends and category breakdowns show where to focus.',
+              },
+              {
+                Icon: IconUsers,
+                title: 'Happier teams',
+                desc: 'Balanced workloads mean no one drowns while others idle.',
+              },
+              {
+                Icon: IconTarget,
+                title: 'Hit more deadlines',
+                desc: 'Clear countdowns and progress keep everyone accountable.',
+              },
+              {
+                Icon: IconShield,
+                title: 'Nothing falls through',
+                desc: 'Every project, task, and invoice in one system of record.',
+              },
+            ].map((card, i) => (
+              <div className="lp-benefit-card" key={i}>
+                <div className="lp-benefit-icon">
+                  <card.Icon />
                 </div>
-                <DashboardMockup theme="dark" />
+                <h3 className="lp-benefit-title">{card.title}</h3>
+                <p className="lp-benefit-desc">{card.desc}</p>
               </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* ── 13. FINAL CTA ───────────────────────────────── */}
+      {/* ── 14. FINAL CTA ───────────────────────────────── */}
       <section className="lp-cta" id="lp-cta">
         <div className="lp-container">
           <div className="lp-cta-inner lp-reveal" ref={revealCta}>
@@ -977,7 +910,7 @@ export default function LandingPage({ onGetStarted }) {
         </div>
       </section>
 
-      {/* ── 14. FOOTER ──────────────────────────────────── */}
+      {/* ── 15. FOOTER ──────────────────────────────────── */}
       <footer className="lp-footer">
         <div className="lp-container">
           <div className="lp-footer-inner">
@@ -988,7 +921,7 @@ export default function LandingPage({ onGetStarted }) {
             <div className="lp-footer-links">
               <button className="lp-footer-link" onClick={() => scrollTo('lp-features')}>Features</button>
               <button className="lp-footer-link" onClick={() => scrollTo('lp-hiw')}>How it works</button>
-              <button className="lp-footer-link" onClick={() => scrollTo('lp-experience')}>Benefits</button>
+              <button className="lp-footer-link" onClick={() => scrollTo('lp-benefits')}>Benefits</button>
               <button className="lp-footer-link" onClick={onGetStarted}>Login</button>
             </div>
           </div>

@@ -754,6 +754,7 @@ export default function DashboardPage({ onLogout }) {
     emailNotifications: true,
   });
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [hasUnreadNotifs, setHasUnreadNotifs] = useState(true);
@@ -1133,7 +1134,7 @@ export default function DashboardPage({ onLogout }) {
             className="db-sidebar-logout-btn"
             onClick={() => {
               setIsSettingsOpen(false);
-              onLogout();
+              setIsLogoutModalOpen(true);
             }}
           >
             <span>Logout</span>
@@ -1793,6 +1794,47 @@ export default function DashboardPage({ onLogout }) {
           onSave={(updated) => setUserProfile(updated)}
         />
 
+        {/* ── LOGOUT CONFIRMATION POPUP MODAL ── */}
+        {isLogoutModalOpen && (
+          <div className="db-logout-overlay" onClick={() => setIsLogoutModalOpen(false)}>
+            <div className="db-logout-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="db-logout-icon-wrap">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="7" x2="12" y2="13" />
+                  <circle cx="12" cy="17" r="0.75" fill="#FFFFFF" strokeWidth="1" />
+                </svg>
+              </div>
+
+              <div className="db-logout-text-wrap">
+                <h2 className="db-logout-title">Logout</h2>
+                <p className="db-logout-desc">
+                  Are you sure you want to log out of the dashboard?
+                </p>
+              </div>
+
+              <div className="db-logout-actions">
+                <button
+                  type="button"
+                  className="db-logout-btn-cancel"
+                  onClick={() => setIsLogoutModalOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="db-logout-btn-confirm"
+                  onClick={() => {
+                    setIsLogoutModalOpen(false);
+                    onLogout();
+                  }}
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ── MOBILE NAVIGATION DRAWER OVERLAY ── */}
         {isMobileMenuOpen && (
           <div className="db-mobile-drawer-overlay" onClick={() => setIsMobileMenuOpen(false)}>
@@ -1892,7 +1934,7 @@ export default function DashboardPage({ onLogout }) {
                   className="db-sidebar-logout-btn"
                   onClick={() => {
                     setIsMobileMenuOpen(false);
-                    onLogout();
+                    setIsLogoutModalOpen(true);
                   }}
                 >
                   <span>Logout</span>
