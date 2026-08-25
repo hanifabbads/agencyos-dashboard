@@ -197,10 +197,10 @@ export default function SignInPage({ onNavigateToSignUp, onSignInSuccess }) {
           type="button" 
           className="theme-toggle-btn"
           onClick={toggleTheme}
-          title="Toggle Color Mode Tokens"
+          title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          aria-label={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
         >
-          {isDarkMode ? <Sun size={15} /> : <Moon size={15} />}
-          <span>{isDarkMode ? 'Light Tokens' : 'Dark Tokens'}</span>
+          {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
         </button>
 
         <div className="form-wrapper">
