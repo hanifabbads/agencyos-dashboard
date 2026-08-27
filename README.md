@@ -97,20 +97,40 @@ By default, AgencyOS launches in **Demo Mode**.
 
 # Authentication
 
-AgencyOS features an abstracted authentication architecture located in [`src/services/auth.service.js`](./src/services/auth.service.js). You can switch between authentication modes via the `VITE_AUTH_PROVIDER` environment variable:
+AgencyOS features a decoupled authentication architecture located in [`src/services/auth.service.js`](./src/services/auth.service.js). You can switch between authentication modes via the `VITE_AUTH_PROVIDER` environment variable:
 
 ### 1. Standalone Demo Mode (Default)
 - Configured via: `VITE_AUTH_PROVIDER="demo"` (or when no environment variables are set).
-- Handles login, signup, social logins, profile settings, and logout entirely in the browser.
+- Handles login, signup, Google/Apple mock sign-in, profile settings, and logout entirely client-side.
+- Zero external credentials, accounts, or database setup required.
 
-### 2. Google Firebase Authentication
+### 2. Google Firebase Mode
 - Configured via: `VITE_AUTH_PROVIDER="firebase"`.
-- Uses the official Firebase SDK (`firebase/auth`) with email/password and popup OAuth.
-- If Firebase environment variables are omitted or invalid, the app gracefully falls back to demo mode without crashing.
+- Uses the official Firebase Web SDK (`firebase/auth`) for production authentication.
+- **Strict OAuth Flow**: Google and Apple buttons trigger real Firebase OAuth popup authentication without silent fallbacks. If authentication is cancelled or misconfigured, clear user-friendly errors are displayed on the login screen.
+
+#### Setting up your Firebase Project:
+1. Create a project at the [Firebase Console](https://console.firebase.google.com/).
+2. Navigate to **Authentication** → **Sign-in method**.
+3. Enable **Email/Password**.
+4. Enable **Google** provider and configure your project support email.
+5. *(Optional)* Enable **Apple** provider:
+   > **Note on Apple Sign-In**: Apple OAuth requires an active Apple Developer Program membership. You must configure your **Services ID**, **Apple Team ID**, **Key ID**, and private key in the Firebase Console under the Apple provider settings.
+6. Under **Project Settings** → **General** → **Your apps**, create a Web App and copy your config values into `.env`:
+   ```bash
+   VITE_AUTH_PROVIDER="firebase"
+   VITE_FIREBASE_API_KEY="your-api-key"
+   VITE_FIREBASE_AUTH_DOMAIN="your-project.firebaseapp.com"
+   VITE_FIREBASE_PROJECT_ID="your-project-id"
+   VITE_FIREBASE_STORAGE_BUCKET="your-project.appspot.com"
+   VITE_FIREBASE_MESSAGING_SENDER_ID="your-sender-id"
+   VITE_FIREBASE_APP_ID="your-app-id"
+   ```
+7. Start your local server (`npm run dev`). Authentication will now run through your live Firebase project.
 
 ### 3. Supabase / Custom REST Authentication
 - Configured via: `VITE_AUTH_PROVIDER="supabase"`.
-- Plug your API endpoints or `@supabase/supabase-js` client directly into [`src/services/auth.service.js`](./src/services/auth.service.js).
+- Plug your API endpoints or `@supabase/supabase-js` client directly into [`src/services/auth.service.js`](./src/services/auth.service.js). See [**CUSTOMIZATION.md**](./CUSTOMIZATION.md) for database schemas and integration guides.
 
 ---
 

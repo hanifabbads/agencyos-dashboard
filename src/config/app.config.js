@@ -12,7 +12,7 @@ export const appConfig = {
 
   // Authentication provider mode: 'demo' | 'firebase' | 'supabase'
   // When 'demo', the app runs with local state and localStorage persistence without any external dependencies.
-  authProvider: import.meta.env.VITE_AUTH_PROVIDER || 'demo',
+  authProvider: (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_AUTH_PROVIDER) || 'demo',
 
   // Default theme: 'light' | 'dark'
   defaultTheme: 'light',

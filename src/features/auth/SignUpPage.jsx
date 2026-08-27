@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { User, Mail, Lock, Eye, EyeOff, Check, Sun, Moon, AlertCircle } from 'lucide-react';
-import { signUp, signInWithGoogle, signInWithApple } from '../../services/auth.service';
+import { signUp, signInWithGoogle, signInWithApple, formatAuthErrorMessage } from '../../services/auth.service';
 import { brandingConfig } from '../../config/branding.config';
 
 const GoogleIcon = () => (
@@ -60,18 +60,8 @@ export default function SignUpPage({ onNavigateToSignIn, onSignUpSuccess }) {
         onSignUpSuccess(user);
       }
     } catch (err) {
-      console.error('Sign-up error:', err);
-      let message = 'Failed to create account. Please try again.';
-      if (err.code === 'auth/email-already-in-use') {
-        message = 'An account with this email already exists.';
-      } else if (err.code === 'auth/weak-password') {
-        message = 'Password should be at least 6 characters.';
-      } else if (err.code === 'auth/invalid-email') {
-        message = 'Please enter a valid email address.';
-      } else if (err.message) {
-        message = err.message;
-      }
-      setError(message);
+      console.warn('Sign-up error:', err);
+      setError(formatAuthErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -86,10 +76,8 @@ export default function SignUpPage({ onNavigateToSignIn, onSignUpSuccess }) {
         onSignUpSuccess(user);
       }
     } catch (err) {
-      console.warn('Google sign-up notice:', err);
-      if (err.code === 'auth/popup-blocked') {
-        setError('Sign-in popup was blocked by your browser. Please allow popups for this site.');
-      }
+      console.warn('Google sign-up error:', err);
+      setError(formatAuthErrorMessage(err, 'google'));
     } finally {
       setIsLoading(false);
     }
@@ -104,10 +92,8 @@ export default function SignUpPage({ onNavigateToSignIn, onSignUpSuccess }) {
         onSignUpSuccess(user);
       }
     } catch (err) {
-      console.warn('Apple sign-up notice:', err);
-      if (err.code === 'auth/popup-blocked') {
-        setError('Sign-in popup was blocked by your browser. Please allow popups for this site.');
-      }
+      console.warn('Apple sign-up error:', err);
+      setError(formatAuthErrorMessage(err, 'apple'));
     } finally {
       setIsLoading(false);
     }
