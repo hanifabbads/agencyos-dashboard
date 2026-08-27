@@ -7,6 +7,7 @@
 
 import { initializeApp, getApps } from "firebase/app";
 import { getAuth } from "firebase/auth";
+import { getAnalytics, isSupported } from "firebase/analytics";
 
 // Read environment variables safely
 const env = (typeof import.meta !== 'undefined' && import.meta.env) ? import.meta.env : {};
@@ -24,15 +25,27 @@ export const isFirebaseConfigured = Boolean(firebaseConfig.apiKey && firebaseCon
 
 let app = null;
 let auth = null;
+let analytics = null;
 
 if (isFirebaseConfigured) {
   try {
     app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
     auth = getAuth(app);
+    
+    // Safely initialize analytics in supported browser environments
+    if (typeof window !== 'undefined' && firebaseConfig.measurementId) {
+      isSupported().then((supported) => {
+        if (supported && app) {
+          analytics = getAnalytics(app);
+        }
+      }).catch((err) => {
+        console.warn("Firebase Analytics notice:", err);
+      });
+    }
   } catch (error) {
     console.warn("Firebase initialization warning (falling back to demo mode):", error);
   }
 }
 
-export { app, auth };
+export { app, auth, analytics };
 export default app;
