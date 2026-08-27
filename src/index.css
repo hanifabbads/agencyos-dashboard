@@ -3112,7 +3112,8 @@ body {
   flex-direction: column;
   gap: 24px;
   width: 100%;
-  max-width: 1224px;
+  max-width: none;
+  box-sizing: border-box;
 }
 
 /* ── Back Button ────────────────────────────────────────────────────────────── */
@@ -3844,7 +3845,8 @@ body {
   flex-direction: column;
   gap: 24px;
   width: 100%;
-  max-width: 1224px;
+  max-width: none;
+  box-sizing: border-box;
 }
 
 /* ── Top Summary KPI Cards ─────────────────────────────────────────────────── */
@@ -4092,7 +4094,8 @@ body {
   flex-direction: column;
   gap: 24px;
   width: 100%;
-  max-width: 1226px;
+  max-width: none;
+  box-sizing: border-box;
 }
 
 .dl-section-card {

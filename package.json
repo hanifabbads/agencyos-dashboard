@@ -1,7 +1,8 @@
 {
-  "name": "agency-os",
-  "private": true,
+  "name": "agencyos-dashboard",
   "version": "1.0.0",
+  "private": true,
+  "description": "AgencyOS — Modern Operations Dashboard & Landing Page Template for Creative Agencies",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -17,5 +18,16 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
     "vite": "^6.0.7"
-  }
+  },
+  "keywords": [
+    "agency",
+    "dashboard",
+    "operations",
+    "template",
+    "react",
+    "vite",
+    "dark-mode",
+    "crm",
+    "project-management"
+  ]
 }

@@ -1,13 +1,7 @@
 import React, { useState } from 'react';
 import { User, Mail, Lock, Eye, EyeOff, Check, Sun, Moon, AlertCircle } from 'lucide-react';
-import {
-  createUserWithEmailAndPassword,
-  updateProfile,
-  GoogleAuthProvider,
-  OAuthProvider,
-  signInWithPopup,
-} from 'firebase/auth';
-import { auth } from '../../firebase';
+import { signUp, signInWithGoogle, signInWithApple } from '../../services/auth.service';
+import { brandingConfig } from '../../config/branding.config';
 
 const GoogleIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24">
@@ -61,50 +55,12 @@ export default function SignUpPage({ onNavigateToSignIn, onSignUpSuccess }) {
     setIsLoading(true);
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const cleanUsername = username.trim();
-      if (cleanUsername) {
-        try {
-          await updateProfile(userCredential.user, {
-            displayName: cleanUsername,
-          });
-        } catch (profileErr) {
-          console.warn('Profile update error:', profileErr);
-        }
-      }
-
-      const displayName = cleanUsername || userCredential.user.displayName || 'Agency Owner';
-      const parts = displayName.trim().split(/\s+/);
-      const initials = parts.length === 1
-        ? parts[0].substring(0, 2).toUpperCase()
-        : (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-
-      try {
-        localStorage.setItem(
-          'agencyos_user_profile',
-          JSON.stringify({
-            name: displayName,
-            role: 'Agency Owner',
-            email: email,
-            initials: initials,
-            taskThreshold: 30,
-            emailNotifications: true,
-          })
-        );
-      } catch (storageErr) {
-        console.warn('LocalStorage error:', storageErr);
-      }
-
-      const finalUser = {
-        ...userCredential.user,
-        displayName: displayName,
-      };
-
+      const user = await signUp(username, email, password);
       if (onSignUpSuccess) {
-        onSignUpSuccess(finalUser);
+        onSignUpSuccess(user);
       }
     } catch (err) {
-      console.error('Firebase sign-up error:', err);
+      console.error('Sign-up error:', err);
       let message = 'Failed to create account. Please try again.';
       if (err.code === 'auth/email-already-in-use') {
         message = 'An account with this email already exists.';
@@ -125,62 +81,14 @@ export default function SignUpPage({ onNavigateToSignIn, onSignUpSuccess }) {
     setError('');
     setIsLoading(true);
     try {
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      const displayName = result.user.displayName || 'Google User';
-      const parts = displayName.trim().split(/\s+/);
-      const initials = parts.length === 1
-        ? parts[0].substring(0, 2).toUpperCase()
-        : (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-
-      try {
-        localStorage.setItem(
-          'agencyos_user_profile',
-          JSON.stringify({
-            name: displayName,
-            role: 'Agency Owner',
-            email: result.user.email || '',
-            initials: initials,
-            taskThreshold: 30,
-            emailNotifications: true,
-          })
-        );
-      } catch (storageErr) {
-        console.warn('LocalStorage error:', storageErr);
-      }
-
+      const user = await signInWithGoogle();
       if (onSignUpSuccess) {
-        onSignUpSuccess(result.user);
+        onSignUpSuccess(user);
       }
     } catch (err) {
-      console.warn('Google sign-up Firebase notice:', err);
+      console.warn('Google sign-up notice:', err);
       if (err.code === 'auth/popup-blocked') {
         setError('Sign-in popup was blocked by your browser. Please allow popups for this site.');
-      } else if (err.code === 'auth/popup-closed-by-user') {
-        // User closed popup
-      } else {
-        // Fallback for demo/localhost when provider is not configured in Firebase Console
-        const mockUser = {
-          displayName: 'Google User',
-          email: 'google.user@agencyos.app',
-          uid: 'google-demo-uid',
-        };
-        try {
-          localStorage.setItem(
-            'agencyos_user_profile',
-            JSON.stringify({
-              name: 'Google User',
-              role: 'Agency Owner',
-              email: mockUser.email,
-              initials: 'GU',
-              taskThreshold: 30,
-              emailNotifications: true,
-            })
-          );
-        } catch (e) {}
-        if (onSignUpSuccess) {
-          onSignUpSuccess(mockUser);
-        }
       }
     } finally {
       setIsLoading(false);
@@ -191,47 +99,14 @@ export default function SignUpPage({ onNavigateToSignIn, onSignUpSuccess }) {
     setError('');
     setIsLoading(true);
     try {
-      const provider = new OAuthProvider('apple.com');
-      const result = await signInWithPopup(auth, provider);
-      const displayName = result.user.displayName || 'Apple User';
-      const parts = displayName.trim().split(/\s+/);
-      const initials = parts.length === 1
-        ? parts[0].substring(0, 2).toUpperCase()
-        : (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-
-      try {
-        localStorage.setItem(
-          'agencyos_user_profile',
-          JSON.stringify({
-            name: displayName,
-            role: 'Agency Owner',
-            email: result.user.email || '',
-            initials: initials,
-            taskThreshold: 30,
-            emailNotifications: true,
-          })
-        );
-      } catch (e) {}
-
+      const user = await signInWithApple();
       if (onSignUpSuccess) {
-        onSignUpSuccess(result.user);
+        onSignUpSuccess(user);
       }
     } catch (err) {
-      console.warn('Apple sign-up Firebase notice:', err);
+      console.warn('Apple sign-up notice:', err);
       if (err.code === 'auth/popup-blocked') {
         setError('Sign-in popup was blocked by your browser. Please allow popups for this site.');
-      } else if (err.code === 'auth/popup-closed-by-user') {
-        // User closed popup
-      } else {
-        // Fallback for demo/localhost when Apple developer account is not configured in Firebase Console
-        const mockUser = {
-          displayName: 'Apple User',
-          email: 'apple.user@agencyos.app',
-          uid: 'apple-demo-uid',
-        };
-        if (onSignUpSuccess) {
-          onSignUpSuccess(mockUser);
-        }
       }
     } finally {
       setIsLoading(false);
@@ -249,35 +124,23 @@ export default function SignUpPage({ onNavigateToSignIn, onSignUpSuccess }) {
           </h1>
 
           <p className="hero-description">
-            Projects, deadlines, team workload, and revenue — everything your team needs, beautifully organized.
+            {brandingConfig.auth.heroDescription}
           </p>
 
           <div className="hero-features">
-            <div className="feature-item">
-              <span className="check-icon-wrapper">
-                <Check size={13} strokeWidth={2.5} />
-              </span>
-              <span>Live dashboard with KPIs & revenue tracking</span>
-            </div>
-
-            <div className="feature-item">
-              <span className="check-icon-wrapper">
-                <Check size={13} strokeWidth={2.5} />
-              </span>
-              <span>Project pipeline with at-risk alerts</span>
-            </div>
-
-            <div className="feature-item">
-              <span className="check-icon-wrapper">
-                <Check size={13} strokeWidth={2.5} />
-              </span>
-              <span>Team workload balancing</span>
-            </div>
+            {brandingConfig.auth.bulletPoints.map((text, idx) => (
+              <div className="feature-item" key={idx}>
+                <span className="check-icon-wrapper">
+                  <Check size={13} strokeWidth={2.5} />
+                </span>
+                <span>{text}</span>
+              </div>
+            ))}
           </div>
         </div>
 
         <div className="hero-footer">
-          © 2026 AgencyOS
+          {brandingConfig.company.copyright}
         </div>
       </div>
 
@@ -302,12 +165,12 @@ export default function SignUpPage({ onNavigateToSignIn, onSignUpSuccess }) {
               <rect x="16" y="8" width="4" height="20" rx="2" fill="white" />
               <rect x="24" y="18" width="4" height="10" rx="2" fill="white" />
             </svg>
-            <span className="mobile-auth-brand-name">AgencyOS</span>
+            <span className="mobile-auth-brand-name">{brandingConfig.brandName}</span>
           </div>
 
           <div className="form-header">
             <h2 className="form-title">Register Your<br />Account</h2>
-            <p className="form-subtitle">Register to your AgencyOS workspace.</p>
+            <p className="form-subtitle">Register to your {brandingConfig.brandName} workspace.</p>
           </div>
 
           {error && (
@@ -342,7 +205,7 @@ export default function SignUpPage({ onNavigateToSignIn, onSignUpSuccess }) {
                   id="username"
                   type="text"
                   className="form-input no-right-icon"
-                  placeholder="John Dae"
+                  placeholder="Jane Doe"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
@@ -362,7 +225,7 @@ export default function SignUpPage({ onNavigateToSignIn, onSignUpSuccess }) {
                   id="email"
                   type="email"
                   className="form-input no-right-icon"
-                  placeholder="example@gmail.com"
+                  placeholder="admin@agencyos.app"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -382,7 +245,7 @@ export default function SignUpPage({ onNavigateToSignIn, onSignUpSuccess }) {
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   className="form-input"
-                  placeholder="**********"
+                  placeholder="••••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { clientOptions, projectCategories, pmOptions } from '../../data/demo/projects.data';
 
 const IconClose = () => (
   <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -12,22 +13,9 @@ const IconBuilding = () => (
   </svg>
 );
 
-const IconUsers = () => (
-  <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-    <path d="M14 17v-1.5a3.5 3.5 0 00-3.5-3.5h-5A3.5 3.5 0 002 15.5V17M9 8.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM18 17v-1.5a3.5 3.5 0 00-2.5-3.35M14 2.15a3.5 3.5 0 010 6.7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-
 const IconCalendar = () => (
   <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
     <path d="M6 2v2m8-2v2M3.5 7.5h13m-14 -1a2 2 0 012-2h11a2 2 0 012 2v10a2 2 0 01-2 2h-11a2 2 0 01-2-2v-10z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-
-const IconHelp = () => (
-  <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
-    <circle cx="10" cy="10" r="7.5" stroke="currentColor" strokeWidth="1.3"/>
-    <path d="M7.5 7.5a2.5 2.5 0 014.868.806c0 1.25-1.868 1.694-1.868 2.694m0 2.5h.01" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
 
@@ -96,12 +84,6 @@ function CustomDropdown({ value, onChange, options, placeholder, isCurrency = fa
   );
 }
 
-const IconPlus = () => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-    <path d="M10 4.16667V15.8333M4.16667 10H15.8333" stroke="currentColor" strokeWidth="1.67" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-
 function DateField({ value, onChange }) {
   const inputRef = useRef(null);
 
@@ -137,97 +119,17 @@ function DateField({ value, onChange }) {
   );
 }
 
-const clientOptions = [
-  'Quantum Finance',
-  'Mas Bahlel Ganteng',
-  'Little Bolu Ketan',
-  'Nusantara Retail',
-  'TechWave Solutions',
-  'DreamScape Innovations',
-  'SmartAssist Corp',
-  'CryptoGuard Labs',
-  'FitLife Technologies',
-  'Learnify Network',
-  'ShopEase Inc',
-  'Insight Metrics',
-  'GreenGrid Energy',
-  'HomeIQ Systems',
-  'TravelNest',
-  'SecureNet Solutions',
-  'QuickBite',
-  'ConnectNow',
-  'NewsPulse Media',
-  'EnviroSense Labs',
-  'BlockSafe Technologies',
-  'TalentMatch Solutions',
-  'UrbanFlow Systems',
-  'EduTech Innovations',
-  'SkyTrack Logistics',
-  'SonoWave Technologies',
-  'SecureEntry Systems',
-  'ActivePlay Studios',
-  'AgriSense Tech',
-  'CreatiBot Labs',
-  'Bumi Nusantara Logistics',
-  'Tokopedia',
-  'Sosmed KPK',
-  'Quantum Research'
-];
-
-const categoryOptions = [
-  'Digital Marketing',
-  'Mobile App Development',
-  'Web Development',
-  'UI/UX Design',
-  'Social Media Design',
-  'Branding'
-];
-
-const pmOptions = [
-  { initials: 'DN', name: 'Dimas Nugraha', grad: 'linear-gradient(135deg, #10B981 0%, #059669 100%)' },
-  { initials: 'RS', name: 'Rangga Saputra', grad: 'linear-gradient(135deg, #40CCEA 0%, #0891B2 100%)' },
-  { initials: 'BH', name: 'Bayu Hartanto', grad: 'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)' },
-  { initials: 'AW', name: 'Ayu Wati', grad: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)' },
-  { initials: 'FR', name: 'Fatma Risty', grad: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)' },
-  { initials: 'TI', name: 'Tina Irawansyah', grad: 'linear-gradient(135deg, #10B981 0%, #059669 100%)' },
-  { initials: 'MW', name: 'Megan Wijaya', grad: 'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)' },
-  { initials: 'SJ', name: 'Satria Jaya', grad: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)' },
-  { initials: 'UR', name: 'Una Rahmawati', grad: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)' },
-  { initials: 'AG', name: 'Agus Gunawan', grad: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)' },
-  { initials: 'ND', name: 'Nadia Dewi', grad: 'linear-gradient(135deg, #10B981 0%, #059669 100%)' },
-  { initials: 'HR', name: 'Hendra Ramadhan', grad: 'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)' },
-  { initials: 'YS', name: 'Yusuf Satria', grad: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)' },
-  { initials: 'MK', name: 'Maya Kusuma', grad: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)' },
-  { initials: 'RS', name: 'Rizky Saputra', grad: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)' },
-  { initials: 'DP', name: 'Dewi Pertiwi', grad: 'linear-gradient(135deg, #10B981 0%, #059669 100%)' },
-  { initials: 'FH', name: 'Fajar Hidayat', grad: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)' },
-  { initials: 'IA', name: 'Indah Ayu', grad: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)' },
-  { initials: 'AK', name: 'Adi Kurniawan', grad: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)' },
-  { initials: 'SN', name: 'Sinta Nuraini', grad: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)' },
-  { initials: 'RV', name: 'Rosid Yulianto', grad: 'linear-gradient(135deg, #10B981 0%, #059669 100%)' },
-  { initials: 'LT', name: 'Lutfi Tifana', grad: 'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)' },
-  { initials: 'WP', name: 'Wulan Putri', grad: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)' },
-  { initials: 'EC', name: 'Eko Cahyono', grad: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)' },
-  { initials: 'GB', name: 'Gilang Budi', grad: 'linear-gradient(135deg, #10B981 0%, #059669 100%)' },
-  { initials: 'JS', name: 'Joko Susanto', grad: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)' },
-  { initials: 'CH', name: 'Candra Hapsari', grad: 'linear-gradient(135deg, #40CCEA 0%, #0891B2 100%)' },
-  { initials: 'NV', name: 'Novi Viani', grad: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)' },
-  { initials: 'RM', name: 'Rafli Maulana', grad: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)' },
-  { initials: 'AP', name: 'Anisa Putri', grad: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)' },
-  { initials: 'CM', name: 'Citra Maharani', grad: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)' }
-];
-
 const statusOptions = ['Active', 'Planning', 'Overdue', 'At Risk', 'Completed'];
 
 const currencySymbols = {
   IDR: 'Rp',
   USD: '$',
-  EUR: '€'
+  EUR: '€',
 };
 
 export default function NewProjectModal({ onClose, onCreateProject, initialData = null, isEdit = false }) {
   const [name, setName] = useState(initialData?.name || '');
-  const [fieldMode, setFieldMode] = useState(initialData?.fieldMode || 'client'); // 'client' | 'company'
+  const [fieldMode, setFieldMode] = useState(initialData?.fieldMode || 'client');
   const [client, setClient] = useState(initialData?.client || '');
   const [category, setCategory] = useState(initialData?.category || '');
   const [pmName, setPmName] = useState(initialData?.pmName || '');
@@ -258,17 +160,17 @@ export default function NewProjectModal({ onClose, onCreateProject, initialData 
     onCreateProject({
       ...initialData,
       name,
-      client: client || (fieldMode === 'company' ? 'Company Name' : 'Client Company'),
+      client: client || (fieldMode === 'company' ? 'Company Client' : 'Client Account'),
       category: category || 'Web Development',
       pmName: pmObj.name,
       pmInitials: pmObj.initials,
       pmGrad: pmObj.grad,
-      budget: budget ? `${currSymbol} ${budget}` : `${currSymbol} 1.000.000`,
+      budget: budget ? `${currSymbol} ${budget}` : `${currSymbol} 10.000.000`,
       currency,
       status: status || 'Active',
       startDate,
       deadline: formattedDeadline || '25 Desember 2026',
-      description
+      description,
     });
   };
 
@@ -298,66 +200,60 @@ export default function NewProjectModal({ onClose, onCreateProject, initialData 
             <input
               type="text"
               className={`npm-input ${!name ? 'is-empty' : ''}`}
-              placeholder="e.g Website Redesign"
+              placeholder="e.g. Website Redesign"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
             />
           </div>
 
-          {/* Row 2: Client/Company & Category */}
-          <div className="npm-row npm-row-2">
-            <div className="npm-field-group">
-              <label className="npm-label">
-                {fieldMode === 'client' ? 'Client' : 'Company'} <span className="npm-required">*</span>
-              </label>
-              <div className="npm-input-with-action">
-                {fieldMode === 'client' ? (
-                  <CustomDropdown
-                    value={client}
-                    onChange={setClient}
-                    options={clientOptions}
-                    placeholder="Select Client"
-                  />
-                ) : (
-                  <input
-                    type="text"
-                    className={`npm-input ${!client ? 'is-empty' : ''}`}
-                    placeholder="Company Name"
-                    value={client}
-                    onChange={(e) => setClient(e.target.value)}
-                    required
-                  />
-                )}
-
-                {fieldMode === 'client' ? (
-                  <button
-                    type="button"
-                    className="npm-action-btn"
-                    onClick={() => {
-                      setFieldMode('company');
-                      setClient('');
-                    }}
-                    title="Switch to Company Input"
-                  >
-                    <IconBuilding />
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    className="npm-action-btn"
-                    onClick={() => {
-                      setFieldMode('client');
-                      setClient('');
-                    }}
-                    title="Switch to Client Dropdown"
-                  >
-                    <IconUsers />
-                  </button>
-                )}
+          {/* Row 2: Client or Company */}
+          <div className="npm-field-group">
+            <div className="npm-label-with-mode">
+              <label className="npm-label">Client / Company Name</label>
+              <div className="npm-mode-toggle">
+                <button
+                  type="button"
+                  className={`npm-mode-btn ${fieldMode === 'client' ? 'is-active' : ''}`}
+                  onClick={() => setFieldMode('client')}
+                >
+                  Preset Client
+                </button>
+                <button
+                  type="button"
+                  className={`npm-mode-btn ${fieldMode === 'company' ? 'is-active' : ''}`}
+                  onClick={() => setFieldMode('company')}
+                >
+                  Custom
+                </button>
               </div>
             </div>
 
+            {fieldMode === 'client' ? (
+              <CustomDropdown
+                value={client}
+                onChange={setClient}
+                options={clientOptions}
+                placeholder="Select a client..."
+              />
+            ) : (
+              <div className="npm-input-with-icon">
+                <span className="npm-input-left-icon">
+                  <IconBuilding />
+                </span>
+                <input
+                  type="text"
+                  className={`npm-input npm-input-pad-left ${!client ? 'is-empty' : ''}`}
+                  placeholder="e.g. Acme Corp"
+                  value={client}
+                  onChange={(e) => setClient(e.target.value)}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Row 3: Category & Project Manager */}
+          <div className="npm-grid-2col">
             <div className="npm-field-group">
               <label className="npm-label">
                 Category <span className="npm-required">*</span>
@@ -365,14 +261,11 @@ export default function NewProjectModal({ onClose, onCreateProject, initialData 
               <CustomDropdown
                 value={category}
                 onChange={setCategory}
-                options={categoryOptions}
-                placeholder="Select Category"
+                options={projectCategories}
+                placeholder="Select Category..."
               />
             </div>
-          </div>
 
-          {/* Row 3: Project Manager & Budget */}
-          <div className="npm-row npm-row-2">
             <div className="npm-field-group">
               <label className="npm-label">
                 Project Manager <span className="npm-required">*</span>
@@ -381,24 +274,16 @@ export default function NewProjectModal({ onClose, onCreateProject, initialData 
                 value={pmName}
                 onChange={setPmName}
                 options={pmOptions}
-                placeholder="Select PM"
+                placeholder="Select PM..."
               />
             </div>
+          </div>
 
+          {/* Row 4: Budget & Status */}
+          <div className="npm-grid-2col">
             <div className="npm-field-group">
-              <label className="npm-label">
-                Budget <span className="npm-required">*</span>
-              </label>
-              <div className="npm-budget-group">
-                <span className="npm-currency-prefix">{currencySymbols[currency] || 'Rp'}</span>
-                <input
-                  type="text"
-                  className={`npm-input npm-budget-input ${!budget ? 'is-empty' : ''}`}
-                  placeholder="1.000.000"
-                  value={budget}
-                  onChange={(e) => setBudget(e.target.value)}
-                  required
-                />
+              <label className="npm-label">Budget</label>
+              <div className="npm-budget-input-group">
                 <CustomDropdown
                   value={currency}
                   onChange={setCurrency}
@@ -406,12 +291,16 @@ export default function NewProjectModal({ onClose, onCreateProject, initialData 
                   placeholder="IDR"
                   isCurrency={true}
                 />
+                <input
+                  type="text"
+                  className={`npm-input npm-budget-field ${!budget ? 'is-empty' : ''}`}
+                  placeholder="10.000.000"
+                  value={budget}
+                  onChange={(e) => setBudget(e.target.value)}
+                />
               </div>
             </div>
-          </div>
 
-          {/* Row 4: Status, Start Date & Deadline */}
-          <div className="npm-row npm-row-3">
             <div className="npm-field-group">
               <label className="npm-label">
                 Status <span className="npm-required">*</span>
@@ -420,15 +309,16 @@ export default function NewProjectModal({ onClose, onCreateProject, initialData 
                 value={status}
                 onChange={setStatus}
                 options={statusOptions}
-                placeholder="Select Status"
+                placeholder="Select status..."
                 isStatus={true}
               />
             </div>
+          </div>
 
+          {/* Row 5: Dates */}
+          <div className="npm-grid-2col">
             <div className="npm-field-group">
-              <label className="npm-label">
-                Start Date <span className="npm-required">*</span>
-              </label>
+              <label className="npm-label">Start Date</label>
               <DateField value={startDate} onChange={setStartDate} />
             </div>
 
@@ -440,26 +330,25 @@ export default function NewProjectModal({ onClose, onCreateProject, initialData 
             </div>
           </div>
 
-          {/* Row 5: Description */}
+          {/* Row 6: Description */}
           <div className="npm-field-group">
-            <label className="npm-label">Description</label>
+            <label className="npm-label">Description (Optional)</label>
             <textarea
               className={`npm-textarea ${!description ? 'is-empty' : ''}`}
-              placeholder="Enter a description..."
-              rows={3}
+              placeholder="Brief summary of the engagement scope..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              rows={3}
             />
-            <span className="npm-optional-hint">Optional</span>
           </div>
 
-          {/* Footer Actions */}
-          <div className="npm-footer">
+          {/* Form Actions */}
+          <div className="npm-actions">
             <button type="button" className="npm-btn-cancel" onClick={onClose}>
               Cancel
             </button>
             <button type="submit" className="npm-btn-submit">
-              {isEdit ? 'Save Changes' : '+ Create Project'}
+              {isEdit ? 'Save Changes' : 'Create Project'}
             </button>
           </div>
         </form>

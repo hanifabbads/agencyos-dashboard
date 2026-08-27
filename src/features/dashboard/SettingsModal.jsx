@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getInitials } from '../../services/auth.service';
 
 const IconClose = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -12,13 +13,6 @@ const IconMail = () => (
     <path d="M22 6l-10 7L2 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
-
-function getInitials(fullName) {
-  if (!fullName) return 'HA';
-  const parts = fullName.trim().split(/\s+/);
-  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
 
 export default function SettingsModal({ isOpen, onClose, userProfile, onSave }) {
   const [name, setName] = useState(userProfile?.name || 'Agency Owner');
@@ -42,11 +36,12 @@ export default function SettingsModal({ isOpen, onClose, userProfile, onSave }) 
   if (!isOpen) return null;
 
   const handleSave = () => {
+    const finalName = name.trim() || 'Agency Owner';
     onSave({
-      name: name.trim() || 'Agency Owner',
+      name: finalName,
       role: role.trim() || 'Agency Owner',
       email: email.trim(),
-      initials: getInitials(name.trim() || 'Agency Owner'),
+      initials: getInitials(finalName),
       taskThreshold,
       emailNotifications,
     });
@@ -62,7 +57,7 @@ export default function SettingsModal({ isOpen, onClose, userProfile, onSave }) 
             <h2 className="set-modal-title">Settings</h2>
             <p className="set-modal-sub">Customize your profile and preferences</p>
           </div>
-          <button type="button" className="set-modal-close" onClick={onClose}>
+          <button type="button" className="set-modal-close" onClick={onClose} title="Close Settings">
             <IconClose />
           </button>
         </div>
@@ -85,8 +80,9 @@ export default function SettingsModal({ isOpen, onClose, userProfile, onSave }) 
           <div className="set-section-label">Profile</div>
 
           <div className="set-field-group">
-            <label className="set-field-label">Display Name</label>
+            <label className="set-field-label" htmlFor="display-name-input">Display Name</label>
             <input
+              id="display-name-input"
               type="text"
               className="set-field-input"
               value={name}
@@ -96,8 +92,9 @@ export default function SettingsModal({ isOpen, onClose, userProfile, onSave }) 
           </div>
 
           <div className="set-field-group">
-            <label className="set-field-label">Job Title</label>
+            <label className="set-field-label" htmlFor="job-title-input">Job Title</label>
             <input
+              id="job-title-input"
               type="text"
               className="set-field-input"
               value={role}
@@ -126,6 +123,7 @@ export default function SettingsModal({ isOpen, onClose, userProfile, onSave }) 
                   background: `linear-gradient(to right, #0c61cf 0%, #0c61cf ${(taskThreshold / 30) * 100}%, #f2f4f7 ${(taskThreshold / 30) * 100}%, #f2f4f7 100%)`
                 }}
                 onChange={(e) => setTaskThreshold(Number(e.target.value))}
+                aria-label="Task capacity threshold"
               />
               <span className="set-slider-value">{taskThreshold}</span>
             </div>
@@ -141,7 +139,7 @@ export default function SettingsModal({ isOpen, onClose, userProfile, onSave }) 
                 <div className="set-notif-sub">Get alerts for deadlines & risks</div>
               </div>
             </div>
-            <label className="set-toggle-switch">
+            <label className="set-toggle-switch" aria-label="Toggle email notifications">
               <input
                 type="checkbox"
                 checked={emailNotifications}

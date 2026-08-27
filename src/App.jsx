@@ -1,80 +1,98 @@
-import React, { useState, useEffect } from 'react';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { auth } from './firebase';
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  isAuthenticated,
+  getStoredUserProfile,
+  subscribeToAuthState,
+  logout,
+} from './services/auth.service';
 import LandingPage from './features/landing/LandingPage';
 import SignInPage from './features/auth/SignInPage';
 import SignUpPage from './features/auth/SignUpPage';
 import DashboardPage from './features/dashboard/DashboardPage';
 
-const AUTH_KEY = 'agencyos_auth';
+/**
+ * Determine initial view based on authentication and URL hash
+ */
+function getInitialView() {
+  const hash = window.location.hash.toLowerCase().replace('#/', '').replace('#', '');
+  const authed = isAuthenticated();
+
+  if (hash === 'sign-in') return 'sign-in';
+  if (hash === 'sign-up') return 'sign-up';
+  if (hash === 'dashboard' || hash === 'projects' || hash === 'team' || hash === 'deadlines') {
+    return authed ? 'dashboard' : 'sign-in';
+  }
+  if (hash === 'landing') return 'landing';
+
+  return authed ? 'dashboard' : 'landing';
+}
 
 export default function App() {
-  const [currentUser, setCurrentUser] = useState(null);
-  const [currentView, setCurrentView] = useState(() => {
-    try {
-      const stored = localStorage.getItem(AUTH_KEY);
-      if (stored === 'true') {
-        return 'dashboard';
-      }
-    } catch (e) {
-      console.error('Failed to read auth from storage:', e);
-    }
-    return 'landing';
-  });
+  const [currentUser, setCurrentUser] = useState(() => getStoredUserProfile());
+  const [currentView, setCurrentView] = useState(getInitialView);
 
+  // Sync route on hash changes (back/forward buttons)
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      if (user) {
-        try {
-          localStorage.setItem(AUTH_KEY, 'true');
-        } catch (e) {
-          console.error('Failed to write auth to storage:', e);
+    const handleHashChange = () => {
+      const hash = window.location.hash.toLowerCase().replace('#/', '').replace('#', '');
+      if (hash === 'sign-in') setCurrentView('sign-in');
+      else if (hash === 'sign-up') setCurrentView('sign-up');
+      else if (hash === 'landing' || hash === '') setCurrentView('landing');
+      else if (['dashboard', 'projects', 'team', 'deadlines'].includes(hash)) {
+        if (isAuthenticated()) {
+          setCurrentView('dashboard');
+        } else {
+          setCurrentView('sign-in');
         }
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  // Sync auth state listener
+  useEffect(() => {
+    const unsubscribe = subscribeToAuthState((user) => {
+      if (user) {
+        setCurrentUser(user);
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
   }, []);
 
-  useEffect(() => {
+  // Update hash & scroll to top when view changes
+  const navigateTo = useCallback((view) => {
+    setCurrentView(view);
+    if (view === 'landing') {
+      window.location.hash = '#/';
+    } else if (view === 'sign-in') {
+      window.location.hash = '#/sign-in';
+    } else if (view === 'sign-up') {
+      window.location.hash = '#/sign-up';
+    } else if (view === 'dashboard') {
+      window.location.hash = '#/dashboard';
+    }
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-  }, [currentView]);
+  }, []);
 
   const handleSignInSuccess = (user) => {
-    setCurrentUser(user || auth.currentUser);
-    try {
-      localStorage.setItem(AUTH_KEY, 'true');
-    } catch (e) {
-      console.error('Failed to write auth to storage:', e);
-    }
-    setCurrentView('dashboard');
+    setCurrentUser(user || getStoredUserProfile());
+    navigateTo('dashboard');
   };
 
   const handleSignUpSuccess = (user) => {
-    setCurrentUser(user || auth.currentUser);
-    try {
-      localStorage.setItem(AUTH_KEY, 'true');
-    } catch (e) {
-      console.error('Failed to write auth to storage:', e);
-    }
-    setCurrentView('dashboard');
+    setCurrentUser(user || getStoredUserProfile());
+    navigateTo('dashboard');
   };
 
   const handleLogout = async () => {
-    try {
-      await signOut(auth);
-    } catch (e) {
-      console.error('Firebase sign-out error:', e);
-    }
-    try {
-      localStorage.removeItem(AUTH_KEY);
-      localStorage.removeItem('agencyos_user_profile');
-    } catch (e) {
-      console.error('Failed to clear auth from storage:', e);
-    }
+    await logout();
     setCurrentUser(null);
-    setCurrentView('landing');
+    navigateTo('landing');
   };
 
   if (currentView === 'dashboard') {
@@ -84,7 +102,7 @@ export default function App() {
   if (currentView === 'sign-up') {
     return (
       <SignUpPage
-        onNavigateToSignIn={() => setCurrentView('sign-in')}
+        onNavigateToSignIn={() => navigateTo('sign-in')}
         onSignUpSuccess={handleSignUpSuccess}
       />
     );
@@ -93,7 +111,7 @@ export default function App() {
   if (currentView === 'sign-in') {
     return (
       <SignInPage
-        onNavigateToSignUp={() => setCurrentView('sign-up')}
+        onNavigateToSignUp={() => navigateTo('sign-up')}
         onSignInSuccess={handleSignInSuccess}
       />
     );
@@ -101,6 +119,6 @@ export default function App() {
 
   // Default: landing page
   return (
-    <LandingPage onGetStarted={() => setCurrentView('sign-in')} />
+    <LandingPage onGetStarted={() => navigateTo('sign-in')} />
   );
 }

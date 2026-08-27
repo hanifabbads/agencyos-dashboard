@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import NewProjectModal from './NewProjectModal';
+import { defaultTasksList } from '../../data/demo/tasks.data';
 
 /* Inline icons for Project Details Page */
 const IconAngleLeft = () => (
@@ -115,145 +116,22 @@ const IconTabActivity = ({ active }) => (
   </svg>
 );
 
-const defaultTasksList = [
-  {
-    id: 1,
-    name: 'Task 3: Component build',
-    stage: 'Testing',
-    status: 'Completed',
-    statusBg: '#ECFDF3',
-    statusColor: '#067647',
-    priority: 'Low',
-    priorityBg: '#F4F5F7',
-    priorityColor: '#717680',
-    assigneeInitials: 'DN',
-    assigneeName: 'Dimas Nugraha',
-    assigneeGrad: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
-    due: '7 November 2026',
-  },
-  {
-    id: 2,
-    name: 'Task 4: Wireframe',
-    stage: 'Development',
-    status: 'To Do',
-    statusBg: '#F4F5F7',
-    statusColor: '#717680',
-    priority: 'Urgent',
-    priorityBg: '#FEE4E2',
-    priorityColor: '#D92D20',
-    assigneeInitials: 'RS',
-    assigneeName: 'Rangga Saputra',
-    assigneeGrad: 'linear-gradient(135deg, #60A5FA 0%, #BF5AF2 100%)',
-    due: '2 Agustus 2026',
-  },
-  {
-    id: 3,
-    name: 'Task 2: Component build',
-    stage: 'Testing',
-    status: 'Review',
-    statusBg: '#FAF5FF',
-    statusColor: '#7E22CE',
-    priority: 'High',
-    priorityBg: '#FEF1C6',
-    priorityColor: '#DC6903',
-    assigneeInitials: 'BH',
-    assigneeName: 'Bayu Hartanto',
-    assigneeGrad: 'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)',
-    due: '15 Desember 2026',
-  },
-  {
-    id: 4,
-    name: 'Task 5: QA pass',
-    stage: 'Development',
-    status: 'Completed',
-    statusBg: '#ECFDF3',
-    statusColor: '#067647',
-    priority: 'Medium',
-    priorityBg: '#EFF6FF',
-    priorityColor: '#006BFF',
-    assigneeInitials: 'AM',
-    assigneeName: 'Ayu Melati',
-    assigneeGrad: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
-    due: '28 Januari 2027',
-  },
-  {
-    id: 5,
-    name: 'Task 6: Component build',
-    stage: 'Development',
-    status: 'In Progress',
-    statusBg: '#EFF6FF',
-    statusColor: '#006BFF',
-    priority: 'High',
-    priorityBg: '#FEF1C6',
-    priorityColor: '#DC6903',
-    assigneeInitials: 'FR',
-    assigneeName: 'Farhan Rizky',
-    assigneeGrad: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)',
-    due: '10 Februari 2027',
-  },
-  {
-    id: 6,
-    name: 'Task 7: Component build',
-    stage: 'Development',
-    status: 'Completed',
-    statusBg: '#ECFDF3',
-    statusColor: '#067647',
-    priority: 'High',
-    priorityBg: '#FEF1C6',
-    priorityColor: '#DC6903',
-    assigneeInitials: 'TI',
-    assigneeName: 'Tina Irwansyah',
-    assigneeGrad: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-    due: '22 Maret 2027',
-  },
-  {
-    id: 7,
-    name: 'Task 8: Integration',
-    stage: 'Testing',
-    status: 'Completed',
-    statusBg: '#ECFDF3',
-    statusColor: '#067647',
-    priority: 'Urgent',
-    priorityBg: '#FEE4E2',
-    priorityColor: '#D92D20',
-    assigneeInitials: 'MW',
-    assigneeName: 'Megan Wulandari',
-    assigneeGrad: 'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)',
-    due: '5 April 2027',
-  },
-  {
-    id: 8,
-    name: 'Task 1: Integration',
-    stage: 'Design',
-    status: 'In Progress',
-    statusBg: '#EFF6FF',
-    statusColor: '#006BFF',
-    priority: 'Medium',
-    priorityBg: '#EFF6FF',
-    priorityColor: '#006BFF',
-    assigneeInitials: 'SJ',
-    assigneeName: 'Satria Jaya',
-    assigneeGrad: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
-    due: '18 Mei 2027',
-  },
-];
-
 const defaultTimelineMilestones = [
   {
     id: 1,
-    title: 'Design',
+    title: 'Discovery & Design',
     status: 'In Progress',
     progressPct: 65,
   },
   {
     id: 2,
-    title: 'Development',
+    title: 'Development & Build',
     status: 'In Progress',
     progressPct: 45,
   },
   {
     id: 3,
-    title: 'Testing',
+    title: 'Testing & QA',
     status: 'In Progress',
     progressPct: 50,
   },
@@ -295,8 +173,6 @@ export default function ProjectDetailsPage({ project, onBack, onUpdateProject })
   const client = project?.client || 'Sinar Abadi Group';
   const category = project?.category || 'Mobile App Development';
   const status = project?.status || 'Active';
-  const statusColor = project?.statusColor || '#0C61CF';
-  const statusBg = project?.statusBg || '#EFF6FF';
   const pmName = project?.pmName || 'Dimas Nugraha';
   const pmInitials = project?.pmInitials || 'DN';
   const pmGrad = project?.pmGrad || 'linear-gradient(135deg, #40CCEA 0%, #0891B2 100%)';
@@ -307,7 +183,7 @@ export default function ProjectDetailsPage({ project, onBack, onUpdateProject })
   return (
     <div className="pd-page-container">
       {/* ── BACK BUTTON ────────────────────────────── */}
-      <button className="pd-back-btn" onClick={onBack}>
+      <button className="pd-back-btn" onClick={onBack} aria-label="Back to projects">
         <IconAngleLeft />
         <span>Project</span>
       </button>

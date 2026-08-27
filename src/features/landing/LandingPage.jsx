@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import agencyosLogo from '../../assets/agencyos-logo.png';
+import { brandingConfig } from '../../config/branding.config';
 import heroDashboardImg from '../../assets/hero-dashboard.png';
 import dashboardDarkImg from '../../assets/dashboard-dark.png';
 import './LandingPage.css';
@@ -7,11 +7,11 @@ import './LandingPage.css';
 // ─── SVG ICONS (inline, no extra dep) ─────────────────────
 const IconLogo = ({ size = 36 }) => (
   <img
-    src={agencyosLogo}
-    alt="AgencyOS Logo"
+    src={brandingConfig.logo.src}
+    alt={brandingConfig.logo.alt}
     width={size}
     height={size}
-    style={{ borderRadius: '8px', objectFit: 'contain', display: 'block' }}
+    style={{ borderRadius: brandingConfig.logo.borderRadius, objectFit: 'contain', display: 'block' }}
   />
 );
 
@@ -916,7 +916,7 @@ export default function LandingPage({ onGetStarted }) {
           <div className="lp-footer-inner">
             <div className="lp-footer-logo">
               <IconLogo size={32} />
-              <span className="lp-footer-logo-name">AgencyOS</span>
+              <span className="lp-footer-logo-name">{brandingConfig.brandName}</span>
             </div>
             <div className="lp-footer-links">
               <button className="lp-footer-link" onClick={() => scrollTo('lp-features')}>Features</button>
@@ -927,8 +927,8 @@ export default function LandingPage({ onGetStarted }) {
           </div>
           <hr className="lp-footer-divider" />
           <div className="lp-footer-bottom">
-            <span className="lp-footer-copy">© 2025 AgencyOS. All rights reserved.</span>
-            <span className="lp-footer-tagline">Built for creative agencies in Indonesia.</span>
+            <span className="lp-footer-copy">{brandingConfig.company.copyright}</span>
+            <span className="lp-footer-tagline">Built for modern creative agencies.</span>
           </div>
         </div>
       </footer>

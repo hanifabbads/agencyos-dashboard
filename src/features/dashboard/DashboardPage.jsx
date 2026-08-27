@@ -1,30 +1,38 @@
-import React, { useState } from 'react';
-import ProjectsPage, { all300Projects } from '../projects/ProjectsPage';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import ProjectsPage from '../projects/ProjectsPage';
 import ProjectDetailsPage from '../projects/ProjectDetailsPage';
 import TeamPage from '../team/TeamPage';
-import DeadlinesPage, { overduePaymentsList } from '../deadlines/DeadlinesPage';
+import DeadlinesPage from '../deadlines/DeadlinesPage';
 import NewProjectModal from '../projects/NewProjectModal';
 import SettingsModal from './SettingsModal';
-import agencyosLogo from '../../assets/agencyos-logo.png';
-
-function parseCurrencyValue(str) {
-  if (!str) return 0;
-  const digits = String(str).replace(/[^\d]/g, '');
-  return digits ? parseInt(digits, 10) : 0;
-}
-
-function formatIndonesianCurrency(amount) {
-  if (!amount || amount <= 0) return 'Rp 0';
-  if (amount >= 1000000000) {
-    const formatted = (amount / 1000000000).toFixed(1);
-    return `Rp ${formatted} M`;
-  }
-  if (amount >= 1000000) {
-    const formatted = Math.round(amount / 1000000);
-    return `Rp ${formatted} jt`;
-  }
-  return `Rp ${amount.toLocaleString('id-ID')}`;
-}
+import { brandingConfig } from '../../config/branding.config';
+import { navItems, pageTitles } from '../../config/navigation.config';
+import {
+  getStoredUserProfile,
+  saveStoredUserProfile,
+  getInitials,
+} from '../../services/auth.service';
+import {
+  getProjects,
+  saveProjects,
+  createProject,
+  updateProject,
+  deleteProject,
+  calculateKPIStats,
+} from '../../services/projects.service';
+import {
+  categoryBreakdownData,
+  monthlyRevenueData,
+  parseCurrencyValue,
+  formatIndonesianCurrency,
+} from '../../data/demo/finance.data';
+import { dashboardDeadlines } from '../../data/demo/deadlines.data';
+import {
+  dashboardTeamWorkload,
+  recentActivityData,
+  avatarColors,
+} from '../../data/demo/team.data';
+import { notificationItems } from '../../data/demo/notifications.data';
 
 const IconWallet = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -61,20 +69,17 @@ function highlightMatch(text, query) {
   );
 }
 
-/* ─────────────────────────────────────────────
-   INLINE SVG ICONS  (all from Figma design)
-───────────────────────────────────────────── */
+/* Inline SVG icons */
 const IconLogo = () => (
   <img
-    src={agencyosLogo}
-    alt="AgencyOS Logo"
+    src={brandingConfig.logo.src}
+    alt={brandingConfig.logo.alt}
     width="36"
     height="36"
-    style={{ borderRadius: '8px', objectFit: 'contain', display: 'block' }}
+    style={{ borderRadius: brandingConfig.logo.borderRadius, objectFit: 'contain', display: 'block' }}
   />
 );
 
-// Dashboard — 2×2 grid of rounded squares (matches Figma exactly)
 const IconDashboard = () => (
   <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
     <rect x="2.5" y="2.5" width="6.5" height="6.5" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
@@ -84,7 +89,6 @@ const IconDashboard = () => (
   </svg>
 );
 
-// Projects — folder icon with table lines (matches Figma)
 const IconProjects = () => (
   <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
     <path d="M2 7.5C2 6.4 2.9 5.5 4 5.5H7.5L9 7.5H16C17.1 7.5 18 8.4 18 9.5V15C18 16.1 17.1 17 16 17H4C2.9 17 2 16.1 2 15V7.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" fill="none"/>
@@ -92,7 +96,6 @@ const IconProjects = () => (
   </svg>
 );
 
-// Team — person with group circle (matches Figma)
 const IconTeam = () => (
   <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
     <circle cx="7.5" cy="6.5" r="2.75" stroke="currentColor" strokeWidth="1.5"/>
@@ -102,7 +105,6 @@ const IconTeam = () => (
   </svg>
 );
 
-// Deadlines — calendar with clock overlay (matches Figma)
 const IconDeadlines = () => (
   <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
     <rect x="2.5" y="3.5" width="11" height="11" rx="2" stroke="currentColor" strokeWidth="1.5"/>
@@ -138,21 +140,9 @@ const IconBell = () => (
   </svg>
 );
 
-const IconSettings = () => (
-  <svg width="20" height="20" viewBox="0 0 17 17" fill="none">
-    <path d="M8.12321 4.99916C6.39987 4.99916 4.99821 6.40083 4.99821 8.12416C4.99821 9.84749 6.39987 11.2492 8.12321 11.2492C9.84654 11.2492 11.2482 9.84749 11.2482 8.12416C11.2482 6.40083 9.84654 4.99916 8.12321 4.99916ZM8.12321 9.99916C7.08904 9.99916 6.24821 9.15833 6.24821 8.12416C6.24821 7.08999 7.08904 6.24916 8.12321 6.24916C9.15737 6.24916 9.99821 7.08999 9.99821 8.12416C9.99821 9.15833 9.15737 9.99916 8.12321 9.99916ZM15.7965 9.75166C15.2182 9.41666 14.8582 8.79333 14.8574 8.12416C14.8565 7.45666 15.214 6.83417 15.7999 6.49501C16.229 6.24584 16.3757 5.69332 16.1274 5.26332L14.7341 2.85833C14.4857 2.42916 13.9332 2.28167 13.5032 2.52917C12.9207 2.865 12.1966 2.865 11.6124 2.52584C11.0366 2.19167 10.6782 1.57083 10.6782 0.904999C10.6782 0.405832 10.2715 0 9.77238 0H6.47653C5.97653 0 5.57072 0.405832 5.57072 0.904999C5.57072 1.57083 5.21237 2.19166 4.63487 2.52749C4.05237 2.86499 3.32904 2.86582 2.74654 2.52998C2.31571 2.28165 1.76405 2.43 1.51572 2.85917L0.120709 5.26667C-0.127624 5.69584 0.0198652 6.24748 0.453199 6.49915C1.0307 6.83332 1.39071 7.45582 1.39238 8.12332C1.39404 8.79165 1.03571 9.41583 0.450706 9.75499C0.242373 9.87583 0.0923747 10.07 0.0307081 10.3033C-0.0309586 10.5358 0.00071538 10.7783 0.121549 10.9875L1.51404 13.3908C1.76237 13.8208 2.31488 13.97 2.74654 13.7208C3.32904 13.385 4.05155 13.3858 4.62571 13.7183L4.62737 13.7192C4.62987 13.7208 4.63238 13.7225 4.63571 13.7242C5.21154 14.0583 5.56903 14.6791 5.5682 15.3458C5.5682 15.845 5.97403 16.2508 6.4732 16.2508H9.77238C10.2715 16.2508 10.6774 15.845 10.6774 15.3467C10.6774 14.68 11.0357 14.0592 11.614 13.7233C12.1957 13.3858 12.919 13.3842 13.5024 13.7208C13.9324 13.9692 14.484 13.8217 14.7332 13.3925L16.1282 10.985C16.3757 10.5542 16.2282 10.0017 15.7965 9.75166ZM13.8157 12.48C12.9074 12.0842 11.8532 12.1383 10.9849 12.6408C10.124 13.14 9.55571 14.0225 9.44571 14.9992H6.79821C6.68988 14.0225 6.11986 13.1383 5.25903 12.64C4.39236 12.1375 3.33655 12.0842 2.43071 12.48L1.36738 10.6441C2.16321 10.0583 2.64403 9.11834 2.6407 8.11834C2.6382 7.125 2.15821 6.19166 1.36654 5.60582L2.43071 3.76915C3.33738 4.16415 4.39321 4.11082 5.26155 3.60748C6.12155 3.10915 6.68986 2.22583 6.79986 1.25H9.44571C9.55488 2.22667 10.124 3.10916 10.9865 3.60916C11.8524 4.11166 12.9082 4.16499 13.8157 3.76999L14.8799 5.60582C14.0857 6.19082 13.6057 7.12916 13.6074 8.12749C13.6082 9.12249 14.0882 10.0575 14.8807 10.645L13.8157 12.48Z" fill="currentColor"/>
-  </svg>
-);
-
 const IconPlus = () => (
   <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
     <path d="M12.5 5.83333H7.5V0.833333C7.5 0.373333 7.12667 0 6.66667 0C6.20667 0 5.83333 0.373333 5.83333 0.833333V5.83333H0.833333C0.373333 5.83333 0 6.20667 0 6.66667C0 7.12667 0.373333 7.5 0.833333 7.5H5.83333V12.5C5.83333 12.96 6.20667 13.3333 6.66667 13.3333C7.12667 13.3333 7.5 12.96 7.5 12.5V7.5H12.5C12.96 7.5 13.3333 7.12667 13.3333 6.66667C13.3333 6.20667 12.96 5.83333 12.5 5.83333Z" fill="white"/>
-  </svg>
-);
-
-const IconChevronDown = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
 
@@ -174,7 +164,6 @@ const IconArrowDownRight = () => (
   </svg>
 );
 
-// Metric card icon components (adaptive to theme via currentColor)
 const IconDollar = () => (
   <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
     <path
@@ -197,12 +186,6 @@ const IconAlert = () => (
   <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
     <path d="M9 2L16 15H2L9 2Z" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinejoin="round"/>
     <path d="M9 8v3M9 12.5v.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-  </svg>
-);
-
-const IconZap = () => (
-  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-    <path d="M10 2L4 10h6l-2 6 8-8h-6l2-6z" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinejoin="round"/>
   </svg>
 );
 
@@ -277,150 +260,13 @@ const IconLogout = () => (
   </svg>
 );
 
-const notificationItems = [
-  {
-    type: 'overdue',
-    title: 'Project Overdue',
-    sub: 'Project C is overdue',
-    date: '20 Jul 2026',
-    bg: 'var(--fg-error-transparent, #FEF2F2)',
-    color: 'var(--icon-color-error, #D92D20)',
-    icon: <IconAlertTriangle />,
-  },
-  {
-    type: 'overdue',
-    title: 'Project Overdue',
-    sub: 'Project H is overdue',
-    date: '20 Jul 2026',
-    bg: 'var(--fg-error-transparent, #FEF2F2)',
-    color: 'var(--icon-color-error, #D92D20)',
-    icon: <IconAlertTriangle />,
-  },
-  {
-    type: 'at_risk',
-    title: 'Project At Risk',
-    sub: 'Project G is at_risk',
-    date: '20 Jul 2026',
-    bg: 'var(--fg-warning-transparent, #FFFAEB)',
-    color: 'var(--icon-color-warning, #DC6803)',
-    icon: <IconClock />,
-  },
-  {
-    type: 'at_risk',
-    title: 'Project At Risk',
-    sub: 'Project N is at_risk',
-    date: '20 Jul 2026',
-    bg: 'var(--fg-warning-transparent, #FFFAEB)',
-    color: 'var(--icon-color-warning, #DC6803)',
-    icon: <IconClock />,
-  },
-  {
-    type: 'completed',
-    title: 'Project Completed',
-    sub: 'Project A — Digital Marketing was completed',
-    date: '18 Jul 2026',
-    bg: 'var(--fg-success-transparent, #ECFDF3)',
-    color: 'var(--icon-color-success, #067647)',
-    icon: <IconCheckCircle />,
-  },
-  {
-    type: 'upcoming',
-    title: 'Upcoming Deadline',
-    sub: 'Project X deadline is in 24 days',
-    date: '17 Jul 2026',
-    bg: 'var(--fg-info-transparent, #EFF6FF)',
-    color: 'var(--icon-color-info, #0C61CF)',
-    icon: <IconBell />,
-  },
-];
-
-/* ─────────────────────────────────────────────
-   DATA
-───────────────────────────────────────────── */
-
-const categoryData = [
-  { name: 'Branding', fullName: 'Branding', count: 8, revenue: 'Rp 1.7 M', color: '#FF9352' },
-  { name: 'Web Development', fullName: 'Web Development', count: 8, revenue: 'Rp 911 jt', color: '#00D500' },
-  { name: 'Social Media Design', fullName: 'Social Media Design', count: 13, revenue: 'Rp 872 jt', color: '#FDB022' },
-  { name: 'Digital Marketing', fullName: 'Digital Marketing', count: 9, revenue: 'Rp 711 jt', color: '#6E64DE' },
-  { name: 'Mobile App Development', fullName: 'Mobile App Development', count: 9, revenue: 'Rp 510 jt', color: '#95BAEB' },
-  { name: 'UI/UX Design', fullName: 'UI/UX Design', count: 5, revenue: 'Rp 465 jt', color: '#F14437' },
-];
-
-const projects = [
-  { name: 'Project C — Social Media Design', client: 'Rp budi Bandung · Social Media Design', status: 'Pending', statusColor: '#F59E0B', statusBg: '#FFFAEB', progress: 37, deadline: '21 Aug 2026', budget: 'Rp 446 JT' },
-  { name: 'Project M — Mobile App Development', client: 'Aginka Coffee · Mobile App Development', status: 'Resolved', statusColor: '#067647', statusBg: '#ECFDF3', progress: 58, deadline: '21 Jun 2026', budget: 'Rp 142 JT' },
-  { name: 'Project P — Mobile App Development', client: 'Naftyan Satan · Mobile App Development', status: 'In Progress', statusColor: '#0C61CF', statusBg: '#EFF6FF', progress: 29, deadline: '15 Aug 2026', budget: 'Rp 72 JT' },
-  { name: 'Project R — UI/UX Design', client: 'Dano Travel · UI/UX Design', status: 'Resolved', statusColor: '#067647', statusBg: '#ECFDF3', progress: 13, deadline: '13 Nov 2026', budget: 'Rp 76 JT' },
-  { name: 'Project T — Web Development', client: 'Teknologi Muria · Web Development', status: 'Overdue', statusColor: '#D92D20', statusBg: '#FEF2F2', progress: 59, deadline: '4 Nov 2026', budget: 'Rp 271 JT' },
-  { name: 'Project E — Branding', client: 'Plan Teknologi · Branding', status: 'Resolved', statusColor: '#067647', statusBg: '#ECFDF3', progress: 83, deadline: '4 Jun 2025', budget: 'Rp 405 JT' },
-];
-
-const deadlines = [
-  { daysLeft: 24, label: 'Project X — E-Commerce Integration', sub: 'Prima Niaga Labs', color: '#EF4444' },
-  { daysLeft: 35, label: 'Project V — Cloud Migration', sub: 'Solusi Digital', color: '#EF4444' },
-  { daysLeft: 48, label: 'Project T — Web Development', sub: 'Teknologi Muria', color: '#F97316' },
-  { daysLeft: 57, label: 'Project O — Web Development', sub: 'Bu n Ribu Organic', color: '#F97316' },
-  { daysLeft: 61, label: 'Project E — Branding', sub: 'Plan Teknologi', color: '#F97316' },
-  { daysLeft: 65, label: 'Project F — Mobile App Development', sub: 'Geos Natalenta', color: '#0C61CF' },
-  { daysLeft: 69, label: 'Project J — Branding', sub: 'Aginka Coffee', color: '#0C61CF' },
-  { daysLeft: 75, label: 'Project N — Mobile App Development', sub: 'Djawa Organic', color: '#0C61CF' },
-  { daysLeft: 75, label: 'Project C — Social Media Design', sub: 'Studio Kreatif Studio', color: '#0C61CF' },
-];
-
-const teamWorkload = [
-  { initials: 'SD', name: 'Sinta Dewi', tasks: '10/15', pct: 67, color: '#3B82F6' },
-  { initials: 'CM', name: 'Citra Maharani', tasks: '9/15', pct: 60, color: '#F59E0B' },
-  { initials: 'GR', name: 'Galih Ramadhan', tasks: '8/15', pct: 53, color: '#10B981' },
-  { initials: 'LM', name: 'Lina Martina', tasks: '8/15', pct: 53, color: '#8B5CF6' },
-  { initials: 'NA', name: 'Nadia Anggraini', tasks: '8/15', pct: 53, color: '#EC4899' },
-  { initials: 'SW', name: 'Sarah Wijaya', tasks: '7/15', pct: 47, color: '#6366F1' },
-  { initials: 'KD', name: 'Kevin Dara', tasks: '4/15', pct: 27, color: '#14B8A6' },
-];
-
-const avatarColors = [
-  'linear-gradient(135deg, #40CCEA 0%, #0891B2 100%)',
-  'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
-  'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-  'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)',
-  'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)',
-  'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)',
-  'linear-gradient(135deg, #14B8A6 0%, #0D9488 100%)',
-];
-
-const recentActivity = [
-  { initials: 'RS', name: 'Rangga Saputra', action: 'project "sisemsi kpk" was created', sub: 'Sisemsi KPK · 55m ago', color: avatarColors[0] },
-  { initials: 'DN', name: 'Dimas Nugraha', action: 'project "website tokopedia" was created', sub: 'Website Tokopedia · 1h ago', color: avatarColors[2] },
-  { initials: 'CM', name: 'Citra Maharani', action: 'project status updated to planning', sub: 'Project Q — Mobile App Development · 19 Jul 2026', color: avatarColors[1] },
-  { initials: 'CM', name: 'Citra Maharani', action: 'a file was uploaded', sub: 'Project P — Mobile App Development · 19 Jul 2026', color: avatarColors[1] },
-  { initials: 'BH', name: 'Bayu Hartanto', action: 'a team member joined the project', sub: 'Project I — Mobile App Development · 19 Jul 2026', color: avatarColors[5] },
-  { initials: 'RS', name: 'Rangga Saputra', action: 'a team member joined the project', sub: 'Project J — Social Media Design · 19 Jul 2026', color: avatarColors[0] },
-  { initials: 'BH', name: 'Bayu Hartanto', action: 'project status updated to active', sub: 'Project T — Digital Marketing · 19 Jul 2026', color: avatarColors[5] },
-  { initials: 'DN', name: 'Dimas Nugraha', action: 'project status updated to completed', sub: 'Project Q — Mobile App Development · 18 Jul 2026', color: avatarColors[2] },
-];
-
-/* ─────────────────────────────────────────────
-   REVENUE CHART  (pure SVG)
-───────────────────────────────────────────── */
-/* ─────────────────────────────────────────────
-   REVENUE CHART  (pure SVG + interactive hover tooltip)
-───────────────────────────────────────────── */
+/* Pure SVG Revenue Chart with interactive tooltip */
 function RevenueChart() {
-  const [hoveredIndex, setHoveredIndex] = useState(null); // Only show when hovering
-
-  const monthsData = [
-    { month: 'Mar', revenue: 'Rp 0', outstanding: 'Rp 0', revVal: 0, outVal: 0 },
-    { month: 'Apr', revenue: 'Rp 0', outstanding: 'Rp 0', revVal: 0, outVal: 0 },
-    { month: 'May', revenue: 'Rp 120.000.000', outstanding: 'Rp 80.000.000', revVal: 0.12, outVal: 0.08 },
-    { month: 'Jun', revenue: 'Rp 1.850.000.000', outstanding: 'Rp 720.000.000', revVal: 1.85, outVal: 0.72 },
-    { month: 'Jul', revenue: 'Rp 4.015.249.993', outstanding: 'Rp 4.387.416.664', revVal: 4.015, outVal: 4.387 },
-    { month: 'Aug', revenue: 'Rp 0', outstanding: 'Rp 0', revVal: 0, outVal: 0 },
-  ];
-
+  const [hoveredIndex, setHoveredIndex] = useState(null);
+  const monthsData = monthlyRevenueData;
   const W = 570, H = 170;
-  const maxVal = 6.0; // 6.0 M scale
+  const maxVal = 6.0;
 
-  // Points along chart width W
   const points = monthsData.map((d, i) => {
     const x = (i / (monthsData.length - 1)) * W;
     const revY = H * (1 - d.revVal / maxVal);
@@ -428,7 +274,6 @@ function RevenueChart() {
     return { ...d, x, revY, outY };
   });
 
-  // Smooth curve generators
   const getSmoothPath = (key) => {
     let d = `M ${points[0].x} ${points[0][key]}`;
     for (let i = 1; i < points.length; i++) {
@@ -446,7 +291,6 @@ function RevenueChart() {
 
   const activePoint = hoveredIndex !== null ? points[hoveredIndex] : null;
 
-  // Tooltip positioning relative to SVG container
   let tooltipStyle = {};
   if (activePoint) {
     const isRightHalf = activePoint.x > W * 0.5;
@@ -463,14 +307,12 @@ function RevenueChart() {
   return (
     <div style={{ position: 'relative', width: '100%' }} onMouseLeave={() => setHoveredIndex(null)}>
       <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-        {/* Y-axis labels */}
         <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: `${H}px`, paddingBottom: '0px', flexShrink: 0 }}>
-          {yLabels.map(l => (
+          {yLabels.map((l) => (
             <span key={l} style={{ fontSize: '10px', color: 'var(--text-tertiary)', whiteSpace: 'nowrap', lineHeight: 1 }}>{l}</span>
           ))}
         </div>
 
-        {/* Chart SVG + Overlay */}
         <div style={{ flex: 1, position: 'relative' }}>
           <svg
             width="100%"
@@ -487,24 +329,16 @@ function RevenueChart() {
               </linearGradient>
             </defs>
 
-            {/* Grid lines */}
             {[0, 0.25, 0.5, 0.75, 1].map((t, i) => (
               <line key={i} x1="0" y1={t * H} x2={W} y2={t * H} stroke="var(--border-subtle, #E9EAEB)" strokeWidth="1"/>
             ))}
 
-            {/* Area fill */}
             <path d={blueArea} fill="url(#blueGrad)"/>
-
-            {/* Blue line */}
             <path d={blueLine} fill="none" stroke="#0C61CF" strokeWidth="2.5" strokeLinejoin="round"/>
-
-            {/* Orange line */}
             <path d={orangeLine} fill="none" stroke="#F59E0B" strokeWidth="2.5" strokeLinejoin="round"/>
 
-            {/* Active vertical guide line & dots */}
             {activePoint && (
               <g style={{ pointerEvents: 'none' }}>
-                {/* Vertical dashed line */}
                 <line
                   x1={activePoint.x}
                   y1="0"
@@ -514,28 +348,11 @@ function RevenueChart() {
                   strokeWidth="1.2"
                   strokeDasharray="4 4"
                 />
-                {/* Orange dot */}
-                <circle
-                  cx={activePoint.x}
-                  cy={activePoint.outY}
-                  r="4.5"
-                  fill="#F59E0B"
-                  stroke="#ffffff"
-                  strokeWidth="2"
-                />
-                {/* Blue dot */}
-                <circle
-                  cx={activePoint.x}
-                  cy={activePoint.revY}
-                  r="4.5"
-                  fill="#0C61CF"
-                  stroke="#ffffff"
-                  strokeWidth="2"
-                />
+                <circle cx={activePoint.x} cy={activePoint.outY} r="4.5" fill="#F59E0B" stroke="#ffffff" strokeWidth="2"/>
+                <circle cx={activePoint.x} cy={activePoint.revY} r="4.5" fill="#0C61CF" stroke="#ffffff" strokeWidth="2"/>
               </g>
             )}
 
-            {/* Interactive hover detection bands */}
             {points.map((p, i) => {
               const colW = W / (points.length - 1);
               const xStart = i === 0 ? 0 : p.x - colW / 2;
@@ -554,7 +371,6 @@ function RevenueChart() {
             })}
           </svg>
 
-          {/* Tooltip Popup */}
           {activePoint && (
             <div className="db-chart-tooltip" style={tooltipStyle}>
               <div className="db-tooltip-title">{activePoint.month}</div>
@@ -569,7 +385,6 @@ function RevenueChart() {
             </div>
           )}
 
-          {/* X-axis month labels */}
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
             {monthsData.map((m, i) => (
               <span
@@ -593,14 +408,13 @@ function RevenueChart() {
   );
 }
 
-/* ─────────────────────────────────────────────
-   DONUT CHART  (pure SVG + hover interaction)
-───────────────────────────────────────────── */
+/* Donut Chart */
 function DonutChart({ hoveredCategory, setHoveredCategory }) {
+  const categoryData = categoryBreakdownData;
   const total = 52;
   const size = 176;
-  const cx = size / 2; // 88
-  const cy = size / 2; // 88
+  const cx = size / 2;
+  const cy = size / 2;
   const r = 62;
   const strokeW = 24;
   const circ = 2 * Math.PI * r;
@@ -631,10 +445,8 @@ function DonutChart({ hoveredCategory, setHoveredCategory }) {
       style={{ overflow: 'visible', flexShrink: 0 }}
       onMouseLeave={() => setHoveredCategory(null)}
     >
-      {/* Background circle */}
       <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F0F1F3" strokeWidth={strokeW}/>
 
-      {/* Colored category slices */}
       {slices.map((s) => {
         const isHovered = hoveredCategory === s.index;
         return (
@@ -659,7 +471,6 @@ function DonutChart({ hoveredCategory, setHoveredCategory }) {
         );
       })}
 
-      {/* Center text: 52 Projects */}
       <text
         x={cx}
         y={cy - 4}
@@ -685,20 +496,7 @@ function DonutChart({ hoveredCategory, setHoveredCategory }) {
   );
 }
 
-/* ─────────────────────────────────────────────
-   PROGRESS BAR
-───────────────────────────────────────────── */
-function ProgressBar({ pct, color = '#0C61CF' }) {
-  return (
-    <div className="db-progress-track">
-      <div style={{ width: `${pct}%`, height: '100%', borderRadius: '3px', background: color, transition: 'width 0.3s ease' }}/>
-    </div>
-  );
-}
-
-/* ─────────────────────────────────────────────
-   STATUS BADGE (Figma Node 21163:19509)
-───────────────────────────────────────────── */
+/* Status Badge */
 function StatusBadge({ status }) {
   const statusKey = (status || 'Active').toLowerCase().replace(/\s+/g, '-');
   return (
@@ -709,9 +507,7 @@ function StatusBadge({ status }) {
   );
 }
 
-/* ─────────────────────────────────────────────
-   AVATAR
-───────────────────────────────────────────── */
+/* Avatar Component */
 function Avatar({ initials, gradient, size = 32 }) {
   return (
     <div style={{
@@ -733,66 +529,29 @@ function Avatar({ initials, gradient, size = 32 }) {
   );
 }
 
-function getInitials(fullName) {
-  if (!fullName) return 'AO';
-  const parts = fullName.trim().split(/\s+/);
-  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+function ProgressBar({ pct, color = '#0C61CF' }) {
+  return (
+    <div className="db-progress-track">
+      <div style={{ width: `${pct}%`, height: '100%', borderRadius: '3px', background: color, transition: 'width 0.3s ease' }}/>
+    </div>
+  );
 }
 
-/* ─────────────────────────────────────────────
-   MAIN COMPONENT
-───────────────────────────────────────────── */
 export default function DashboardPage({ onLogout, currentUser }) {
-  const [activeNav, setActiveNav] = useState('dashboard');
+  const [activeNav, setActiveNav] = useState(() => {
+    const hash = window.location.hash.toLowerCase().replace('#/', '').replace('#', '');
+    if (['projects', 'team', 'deadlines'].includes(hash)) return hash;
+    return 'dashboard';
+  });
+
   const [selectedProject, setSelectedProject] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [hoveredCategory, setHoveredCategory] = useState(null);
   const [categoryMousePos, setCategoryMousePos] = useState({ x: 0, y: 0 });
   const [isNewProjectOpen, setIsNewProjectOpen] = useState(false);
-  const [allProjectsList, setAllProjectsList] = useState(all300Projects);
-  const [activityList, setActivityList] = useState(recentActivity);
-  const [userProfile, setUserProfile] = useState(() => {
-    try {
-      const stored = localStorage.getItem('agencyos_user_profile');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed?.name) return parsed;
-      }
-    } catch (e) {
-      console.warn('Failed to parse user profile from localStorage:', e);
-    }
-    const displayName = currentUser?.displayName;
-    const email = currentUser?.email || 'admin@agencyos.app';
-    const fallbackName = displayName || (currentUser?.email ? currentUser.email.split('@')[0] : 'Agency Owner');
-    return {
-      name: fallbackName,
-      role: 'Agency Owner',
-      email: email,
-      initials: getInitials(fallbackName),
-      taskThreshold: 30,
-      emailNotifications: true,
-    };
-  });
-
-  React.useEffect(() => {
-    if (currentUser?.displayName) {
-      setUserProfile((prev) => {
-        if (prev.name === currentUser.displayName && prev.email === currentUser.email) return prev;
-        const updated = {
-          ...prev,
-          name: currentUser.displayName,
-          email: currentUser.email || prev.email,
-          initials: getInitials(currentUser.displayName),
-        };
-        try {
-          localStorage.setItem('agencyos_user_profile', JSON.stringify(updated));
-        } catch (e) {}
-        return updated;
-      });
-    }
-  }, [currentUser]);
-
+  const [allProjectsList, setAllProjectsList] = useState(getProjects);
+  const [activityList, setActivityList] = useState(recentActivityData);
+  const [userProfile, setUserProfile] = useState(() => getStoredUserProfile());
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -802,15 +561,33 @@ export default function DashboardPage({ onLogout, currentUser }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
-  const searchRef = React.useRef(null);
-  const notifRef = React.useRef(null);
+  const searchRef = useRef(null);
+  const notifRef = useRef(null);
+
+  // Sync route on hash changes
+  useEffect(() => {
+    const handleHash = () => {
+      const hash = window.location.hash.toLowerCase().replace('#/', '').replace('#', '');
+      if (['dashboard', 'projects', 'team', 'deadlines'].includes(hash)) {
+        setActiveNav(hash);
+      }
+    };
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  }, []);
+
+  const handleNavChange = (navKey) => {
+    setActiveNav(navKey);
+    setSelectedProject(null);
+    window.location.hash = `#/${navKey}`;
+  };
 
   const handleMarkAllAsRead = () => {
     setHasUnreadNotifs(false);
     setReadNotifIndices(notificationItems.map((_, i) => i));
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handleClickOutside = (e) => {
       if (notifRef.current && !notifRef.current.contains(e.target)) {
         setIsNotifOpen(false);
@@ -825,8 +602,8 @@ export default function DashboardPage({ onLogout, currentUser }) {
 
   const queryLower = searchQuery.trim().toLowerCase();
 
-  // 1. Projects
-  const matchingProjects = React.useMemo(() => {
+  // 1. Projects search matching
+  const matchingProjects = useMemo(() => {
     if (!queryLower) return [];
     return (allProjectsList || [])
       .filter((p) => {
@@ -843,8 +620,8 @@ export default function DashboardPage({ onLogout, currentUser }) {
       .slice(0, 5);
   }, [allProjectsList, queryLower]);
 
-  // 2. Clients
-  const matchingClients = React.useMemo(() => {
+  // 2. Clients search matching
+  const matchingClients = useMemo(() => {
     if (!queryLower) return [];
     const clientMap = new Map();
     (allProjectsList || []).forEach((p) => {
@@ -860,8 +637,8 @@ export default function DashboardPage({ onLogout, currentUser }) {
       .slice(0, 3);
   }, [allProjectsList, queryLower]);
 
-  // 3. Team Members & Project Managers
-  const matchingTeam = React.useMemo(() => {
+  // 3. Team search matching
+  const matchingTeam = useMemo(() => {
     if (!queryLower) return [];
     const teamMap = new Map();
     (allProjectsList || []).forEach((p) => {
@@ -878,22 +655,21 @@ export default function DashboardPage({ onLogout, currentUser }) {
       .slice(0, 3);
   }, [allProjectsList, queryLower]);
 
-  // 4. Deadlines
-  const matchingDeadlines = React.useMemo(() => {
+  // 4. Deadlines search matching
+  const matchingDeadlines = useMemo(() => {
     if (!queryLower) return [];
-    return (deadlines || [])
+    return (dashboardDeadlines || [])
       .filter(
         (d) =>
           d &&
-          (safeIncludes(d.name, queryLower) ||
-            safeIncludes(d.days, queryLower) ||
-            safeIncludes(d.status, queryLower))
+          (safeIncludes(d.label, queryLower) ||
+            safeIncludes(d.sub, queryLower) ||
+            safeIncludes(d.daysLeft, queryLower))
       )
       .slice(0, 3);
   }, [queryLower]);
 
-  // Flat array for keyboard navigation
-  const allFlatResults = React.useMemo(() => {
+  const allFlatResults = useMemo(() => {
     const list = [];
     matchingProjects.forEach((p) => list.push({ type: 'project', data: p }));
     matchingClients.forEach((c) => list.push({ type: 'client', data: c }));
@@ -907,19 +683,19 @@ export default function DashboardPage({ onLogout, currentUser }) {
     if (item.type === 'project') {
       setSelectedProject(item.data);
     } else if (item.type === 'client') {
-      setActiveNav('projects');
+      handleNavChange('projects');
       setSelectedProject(null);
     } else if (item.type === 'team') {
-      setActiveNav('team');
+      handleNavChange('team');
       setSelectedProject(null);
     } else if (item.type === 'deadline') {
-      setActiveNav('deadlines');
+      handleNavChange('deadlines');
       setSelectedProject(null);
     }
     setIsSearchOpen(false);
   };
 
-  const activeProjects = React.useMemo(() => {
+  const activeProjects = useMemo(() => {
     let list = (allProjectsList || []).filter((p) => p && p.status === 'Active');
     if (queryLower) {
       list = list.filter(
@@ -934,35 +710,11 @@ export default function DashboardPage({ onLogout, currentUser }) {
     return list.slice(0, 6);
   }, [allProjectsList, queryLower]);
 
-  const kpiStats = React.useMemo(() => {
-    const list = allProjectsList || [];
-    const totalEngagements = list.length;
-    const activeCount = list.filter((p) => p && p.status === 'Active').length;
-    const atRiskCount = list.filter((p) => p && p.status === 'At Risk').length;
-    const overdueCount = list.filter((p) => p && p.status === 'Overdue').length;
-    const completedCount = list.filter((p) => p && (p.status === 'Completed' || p.status === 'Resolved')).length;
-    const uniqueClientsCount = new Set(list.map((p) => p?.client).filter(Boolean)).size;
-
-    // Financial Outstanding calculation from authoritative overduePaymentsList
-    const paymentsList = overduePaymentsList || [];
-    const totalPendingAmount = paymentsList.reduce((sum, item) => sum + parseCurrencyValue(item.amount), 0);
-    const outstandingInvoicesCount = paymentsList.length;
-
-    return {
-      totalEngagements,
-      activeCount,
-      atRiskCount,
-      overdueCount,
-      alertSum: atRiskCount + overdueCount,
-      completedCount,
-      uniqueClientsCount,
-      totalPendingAmount,
-      pendingPaymentsFormatted: formatIndonesianCurrency(totalPendingAmount),
-      outstandingInvoicesCount,
-    };
+  const kpiStats = useMemo(() => {
+    return calculateKPIStats(allProjectsList);
   }, [allProjectsList]);
 
-  const topMetrics = React.useMemo(() => [
+  const topMetrics = useMemo(() => [
     {
       label: 'Total Revenue',
       value: 'Rp 5.1 M',
@@ -1000,59 +752,22 @@ export default function DashboardPage({ onLogout, currentUser }) {
     },
   ], [kpiStats]);
 
-  const bottomMetrics = React.useMemo(() => [
+  const bottomMetrics = useMemo(() => [
     { label: 'Completed', value: `${kpiStats.completedCount}`, icon: <IconCheck />, type: 'completed' },
     { label: 'Tasks Done', value: '158 / 502', icon: <IconTasks />, type: 'tasks' },
     { label: 'Avg Progress', value: '52%', icon: <IconTrend />, type: 'progress' },
     { label: 'Clients', value: `${kpiStats.uniqueClientsCount}`, icon: <IconUsers />, type: 'clients' },
   ], [kpiStats]);
 
-  const deadlinesCount = React.useMemo(() => {
-    return 27; // Matches Figma Node 21083:233
-  }, []);
+  const deadlinesCount = 27;
 
   const handleCreateProject = (newProjData) => {
-    const newProj = {
-      id: Date.now(),
-      name: newProjData.name,
-      client: newProjData.client,
-      category: newProjData.category,
-      status: newProjData.status || 'Active',
-      statusColor:
-        newProjData.status === 'Completed'
-          ? '#067647'
-          : newProjData.status === 'Overdue'
-          ? '#D92D20'
-          : newProjData.status === 'At Risk'
-          ? '#DC6803'
-          : newProjData.status === 'Planning'
-          ? '#717680'
-          : '#0C61CF',
-      statusBg:
-        newProjData.status === 'Completed'
-          ? '#ECFDF3'
-          : newProjData.status === 'Overdue'
-          ? '#FEF2F2'
-          : newProjData.status === 'At Risk'
-          ? '#FFFAEB'
-          : newProjData.status === 'Planning'
-          ? '#F4F5F7'
-          : '#EFF6FF',
-      pmInitials: newProjData.pmInitials || 'RS',
-      pmName: newProjData.pmName || 'Rangga Saputra',
-      pmGrad: newProjData.pmGrad || 'linear-gradient(135deg, #40CCEA 0%, #0891B2 100%)',
-      deadline: newProjData.deadline || '25 Desember 2026',
-      budget: newProjData.budget ? `${newProjData.budget}` : 'Rp 1.000.000',
-    };
+    const { newProject, updatedList } = createProject(newProjData, allProjectsList);
+    setAllProjectsList(updatedList);
 
-    setAllProjectsList((prev) => [newProj, ...prev]);
-
-    // Create activity record matching Figma design:
-    // e.g., "Rangga Saputra project \"sosmed kpk\" was created"
-    // "Sosmed KPK · 58m ago" / "Just now"
     const newActivityItem = {
-      initials: newProjData.pmInitials || 'RS',
-      name: newProjData.pmName || 'Rangga Saputra',
+      initials: newProjData.pmInitials || 'DN',
+      name: newProjData.pmName || 'Dimas Nugraha',
       action: `project "${newProjData.name.toLowerCase()}" was created`,
       sub: `${newProjData.client} · Just now`,
       color: newProjData.pmGrad || avatarColors[0],
@@ -1064,9 +779,13 @@ export default function DashboardPage({ onLogout, currentUser }) {
 
   const handleUpdateProject = (updatedProj) => {
     setSelectedProject(updatedProj);
-    setAllProjectsList((prev) =>
-      prev.map((p) => (p.name === updatedProj.name || (p.id && p.id === updatedProj.id) ? updatedProj : p))
-    );
+    const updatedList = updateProject(updatedProj.id || updatedProj.name, updatedProj, allProjectsList);
+    setAllProjectsList(updatedList);
+  };
+
+  const handleDeleteProject = (deletedId) => {
+    const updatedList = deleteProject(deletedId, allProjectsList);
+    setAllProjectsList(updatedList);
   };
 
   const handleCategoryMouseMove = (e) => {
@@ -1084,84 +803,57 @@ export default function DashboardPage({ onLogout, currentUser }) {
     else document.documentElement.removeAttribute('data-theme');
   };
 
+  const getNavIcon = (iconName) => {
+    switch (iconName) {
+      case 'IconDashboard': return <IconDashboard />;
+      case 'IconProjects': return <IconProjects />;
+      case 'IconTeam': return <IconTeam />;
+      case 'IconDeadlines': return <IconDeadlines />;
+      default: return <IconDashboard />;
+    }
+  };
+
   return (
     <div className="db-root">
       {/* ── SIDEBAR ─────────────────────────────── */}
       <aside className="db-sidebar">
-        {/* Top section: brand + nav */}
         <div className="db-sidebar-top">
           {/* Brand */}
-          <div className="db-sidebar-brand">
+          <div className="db-sidebar-brand" onClick={() => handleNavChange('dashboard')} style={{ cursor: 'pointer' }}>
             <IconLogo />
-            <span className="db-sidebar-name">AgencyOS</span>
+            <span className="db-sidebar-name">{brandingConfig.brandName}</span>
           </div>
 
-          {/* Nav — 16px padding, items 230px wide, gap 8px */}
+          {/* Navigation Links */}
           <nav className="db-nav">
-            {/* Dashboard */}
-            <a
-              href="#dashboard"
-              className={`db-nav-item ${activeNav === 'dashboard' ? 'db-nav-item--active' : ''}`}
-              onClick={(e) => {
-                e.preventDefault();
-                setActiveNav('dashboard');
-                setSelectedProject(null);
-              }}
-            >
-              <span className="db-nav-icon"><IconDashboard /></span>
-              <span className="db-nav-label">Dashboard</span>
-            </a>
-
-            {/* Projects */}
-            <a
-              href="#projects"
-              className={`db-nav-item ${activeNav === 'projects' ? 'db-nav-item--active' : ''}`}
-              onClick={(e) => {
-                e.preventDefault();
-                setActiveNav('projects');
-                setSelectedProject(null);
-              }}
-            >
-              <span className="db-nav-icon"><IconProjects /></span>
-              <span className="db-nav-label">Projects</span>
-            </a>
-
-            {/* Team */}
-            <a
-              href="#team"
-              className={`db-nav-item ${activeNav === 'team' ? 'db-nav-item--active' : ''}`}
-              onClick={(e) => {
-                e.preventDefault();
-                setActiveNav('team');
-                setSelectedProject(null);
-              }}
-            >
-              <span className="db-nav-icon"><IconTeam /></span>
-              <span className="db-nav-label">Team</span>
-            </a>
-
-            {/* Deadlines — badge on right */}
-            <a
-              href="#deadlines"
-              className={`db-nav-item db-nav-item--deadlines ${activeNav === 'deadlines' ? 'db-nav-item--active' : ''}`}
-              onClick={(e) => {
-                e.preventDefault();
-                setActiveNav('deadlines');
-                setSelectedProject(null);
-              }}
-            >
-              <span className="db-nav-icon"><IconDeadlines /></span>
-              <span className="db-nav-label">Deadlines</span>
-              <span className="db-nav-badge">{deadlinesCount}</span>
-            </a>
+            {navItems.map((item) => {
+              const isActive = activeNav === item.key;
+              return (
+                <a
+                  key={item.key}
+                  href={item.hash}
+                  className={`db-nav-item ${item.key === 'deadlines' ? 'db-nav-item--deadlines' : ''} ${isActive ? 'db-nav-item--active' : ''}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleNavChange(item.key);
+                  }}
+                >
+                  <span className="db-nav-icon">{getNavIcon(item.icon)}</span>
+                  <span className="db-nav-label">{item.label}</span>
+                  {item.badgeKey && (
+                    <span className="db-nav-badge">{deadlinesCount}</span>
+                  )}
+                </a>
+              );
+            })}
           </nav>
         </div>
 
-        {/* Bottom: User profile & Logout */}
+        {/* Bottom Profile & Logout */}
         <div className="db-sidebar-bottom">
           <div className="db-sidebar-user-card" onClick={() => setIsSettingsOpen(true)} title="Customize profile">
             <div className="db-user-avatar">
-              {userProfile.initials}
+              {userProfile.initials || getInitials(userProfile.name)}
             </div>
             <div className="db-user-info">
               <div className="db-user-name">{userProfile.name}</div>
@@ -1185,7 +877,6 @@ export default function DashboardPage({ onLogout, currentUser }) {
 
       {/* ── MAIN AREA ───────────────────────────── */}
       <div className="db-main-area">
-
         {/* HEADER */}
         <header className="db-header">
           <div className="db-header-left">
@@ -1194,21 +885,17 @@ export default function DashboardPage({ onLogout, currentUser }) {
               className="db-mobile-menu-btn"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               title="Toggle navigation"
+              aria-label="Toggle navigation"
             >
               {isMobileMenuOpen ? <IconClose /> : <IconMenu />}
             </button>
             <h1 className="db-page-title">
               {selectedProject
-                ? 'Projects Details'
-                : activeNav === 'projects'
-                ? 'Projects'
-                : activeNav === 'team'
-                ? 'Team'
-                : activeNav === 'deadlines'
-                ? 'Deadlines & Alerts'
-                : 'Dashboard'}
+                ? pageTitles.projectDetails
+                : pageTitles[activeNav] || pageTitles.dashboard}
             </h1>
           </div>
+
           <div className="db-header-right">
             {/* Global Live Search Bar & Popover */}
             <div className="db-search-wrapper" ref={searchRef}>
@@ -1223,9 +910,7 @@ export default function DashboardPage({ onLogout, currentUser }) {
                     setIsSearchOpen(true);
                     setSelectedIndex(-1);
                   }}
-                  onFocus={() => {
-                    setIsSearchOpen(true);
-                  }}
+                  onFocus={() => setIsSearchOpen(true)}
                   onKeyDown={(e) => {
                     if (e.key === 'Escape') {
                       setIsSearchOpen(false);
@@ -1255,6 +940,7 @@ export default function DashboardPage({ onLogout, currentUser }) {
                       setSelectedIndex(-1);
                     }}
                     title="Clear search"
+                    aria-label="Clear search"
                   >
                     <IconClose />
                   </button>
@@ -1269,8 +955,7 @@ export default function DashboardPage({ onLogout, currentUser }) {
                       <div
                         className="db-search-item"
                         onClick={() => {
-                          setActiveNav('projects');
-                          setSelectedProject(null);
+                          handleNavChange('projects');
                           setIsSearchOpen(false);
                         }}
                       >
@@ -1283,8 +968,7 @@ export default function DashboardPage({ onLogout, currentUser }) {
                       <div
                         className="db-search-item"
                         onClick={() => {
-                          setActiveNav('team');
-                          setSelectedProject(null);
+                          handleNavChange('team');
                           setIsSearchOpen(false);
                         }}
                       >
@@ -1297,8 +981,7 @@ export default function DashboardPage({ onLogout, currentUser }) {
                       <div
                         className="db-search-item"
                         onClick={() => {
-                          setActiveNav('deadlines');
-                          setSelectedProject(null);
+                          handleNavChange('deadlines');
                           setIsSearchOpen(false);
                         }}
                       >
@@ -1321,8 +1004,7 @@ export default function DashboardPage({ onLogout, currentUser }) {
                         <div className="db-search-section">
                           <div className="db-search-section-title">Projects ({matchingProjects.length})</div>
                           {matchingProjects.map((p, idx) => {
-                            const flatIdx = idx;
-                            const isSelected = selectedIndex === flatIdx;
+                            const isSelected = selectedIndex === idx;
                             return (
                               <div
                                 key={idx}
@@ -1423,9 +1105,9 @@ export default function DashboardPage({ onLogout, currentUser }) {
                                 </div>
                                 <div className="db-search-item-info">
                                   <div className="db-search-item-title">
-                                    {highlightMatch(d.name, searchQuery)}
+                                    {highlightMatch(d.label, searchQuery)}
                                   </div>
-                                  <div className="db-search-item-sub">Deadline in {d.days}</div>
+                                  <div className="db-search-item-sub">{d.sub} · Deadline in {d.daysLeft}d</div>
                                 </div>
                               </div>
                             );
@@ -1438,19 +1120,20 @@ export default function DashboardPage({ onLogout, currentUser }) {
               )}
             </div>
 
-            {/* Right Actions Group (Frame 11 in Figma spec) */}
+            {/* Header Right Actions */}
             <div className="db-header-actions">
-              <button className="db-icon-btn" onClick={toggleTheme} title="Toggle theme">
+              <button className="db-icon-btn" onClick={toggleTheme} title="Toggle theme" aria-label="Toggle dark/light theme">
                 {isDarkMode ? <IconSun /> : <IconMoon />}
               </button>
 
-              {/* Notifications Button & Popover */}
+              {/* Notifications Popover */}
               <div style={{ position: 'relative' }} ref={notifRef}>
                 <button
                   type="button"
                   className={`db-icon-btn ${isNotifOpen ? 'is-active' : ''}`}
                   onClick={() => setIsNotifOpen(!isNotifOpen)}
                   title="Notifications"
+                  aria-label="View notifications"
                 >
                   <IconBell />
                   {hasUnreadNotifs && readNotifIndices.length < notificationItems.length && (
@@ -1466,6 +1149,7 @@ export default function DashboardPage({ onLogout, currentUser }) {
                         type="button"
                         className="db-notif-close-btn"
                         onClick={() => setIsNotifOpen(false)}
+                        aria-label="Close notifications"
                       >
                         <IconClose />
                       </button>
@@ -1492,7 +1176,10 @@ export default function DashboardPage({ onLogout, currentUser }) {
                                 opacity: isRead ? 0.55 : 1,
                               }}
                             >
-                              {item.icon}
+                              {item.iconType === 'alert-triangle' && <IconAlertTriangle />}
+                              {item.iconType === 'clock' && <IconClock />}
+                              {item.iconType === 'check-circle' && <IconCheckCircle />}
+                              {item.iconType === 'bell' && <IconBell />}
                             </div>
                             <div
                               className="db-notif-item-content"
@@ -1526,7 +1213,7 @@ export default function DashboardPage({ onLogout, currentUser }) {
                 )}
               </div>
 
-              {/* CTA */}
+              {/* New Project CTA */}
               <button className="db-btn-primary" onClick={() => setIsNewProjectOpen(true)} title="New Project">
                 <IconPlus />
                 <span>New Project</span>
@@ -1547,12 +1234,11 @@ export default function DashboardPage({ onLogout, currentUser }) {
             <ProjectsPage
               projectsList={allProjectsList}
               onViewDetails={(proj) => setSelectedProject(proj)}
-              onDeleteProject={(deletedId) => {
-                setAllProjectsList((prev) =>
-                  prev.filter((p) => (p.id !== undefined && p.id !== null ? p.id !== deletedId : p.name !== deletedId))
-                );
+              onDeleteProject={handleDeleteProject}
+              onUpdateProjectsList={(newList) => {
+                setAllProjectsList(newList);
+                saveProjects(newList);
               }}
-              onUpdateProjectsList={(newList) => setAllProjectsList(newList)}
             />
           ) : activeNav === 'team' ? (
             <TeamPage />
@@ -1564,258 +1250,255 @@ export default function DashboardPage({ onLogout, currentUser }) {
           ) : (
             <>
               {/* ── ROW 1: TOP METRICS ─────────────────── */}
-          <div className="db-metrics-row">
-            {topMetrics.map((m, i) => (
-              <div key={i} className="db-metric-card">
-                <div className="db-metric-top">
-                  <div>
-                    <div className="db-metric-label">{m.label}</div>
-                    <div className="db-metric-value">{m.value}</div>
-                    <div className="db-metric-sub">{m.sub}</div>
+              <div className="db-metrics-row">
+                {topMetrics.map((m, i) => (
+                  <div key={i} className="db-metric-card">
+                    <div className="db-metric-top">
+                      <div>
+                        <div className="db-metric-label">{m.label}</div>
+                        <div className="db-metric-value">{m.value}</div>
+                        <div className="db-metric-sub">{m.sub}</div>
+                      </div>
+                      <div className={`db-metric-icon db-metric-icon--${m.type}`}>
+                        {m.icon}
+                      </div>
+                    </div>
+                    {m.trend && (
+                      <div className="db-metric-trend">
+                        <span className={`db-metric-trend-val ${m.trendUp ? 'db-metric-trend-up' : 'db-metric-trend-down'}`}>
+                          {m.trendUp ? <IconArrowUpRight /> : <IconArrowDownRight />}
+                          <span>{m.trend}</span>
+                        </span>
+                        <span className="db-metric-trend-label">vs last month</span>
+                      </div>
+                    )}
                   </div>
-                  <div className={`db-metric-icon db-metric-icon--${m.type}`}>
-                    {m.icon}
+                ))}
+              </div>
+
+              {/* ── ROW 2: BOTTOM METRICS ──────────────── */}
+              <div className="db-metrics-row2">
+                {bottomMetrics.map((m, i) => (
+                  <div key={i} className="db-metric-card2">
+                    <div className={`db-metric2-icon db-metric-icon--${m.type}`}>
+                      {m.icon}
+                    </div>
+                    <div>
+                      <div className="db-metric-label">{m.label}</div>
+                      <div className="db-metric-value2">{m.value}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* ── ROW 3: CHARTS ──────────────────────── */}
+              <div className="db-charts-row">
+                {/* Revenue Overview */}
+                <div className="db-card db-chart-card">
+                  <div className="db-card-header">
+                    <div>
+                      <div className="db-card-title">Revenue Overview</div>
+                      <div className="db-card-sub">Collected vs outstanding — last 6 months</div>
+                    </div>
+                    <div className="db-chart-legend">
+                      <span className="db-legend-dot" style={{ background: '#0C61CF' }}/> Revenue
+                      <span className="db-legend-dot" style={{ background: '#F59E0B', marginLeft: '12px' }}/> Outstanding
+                    </div>
+                  </div>
+                  <div className="db-chart-scroll-wrapper">
+                    <RevenueChart />
                   </div>
                 </div>
-                {m.trend && (
-                  <div className="db-metric-trend">
-                    <span className={`db-metric-trend-val ${m.trendUp ? 'db-metric-trend-up' : 'db-metric-trend-down'}`}>
-                      {m.trendUp ? <IconArrowUpRight /> : <IconArrowDownRight />}
-                      <span>{m.trend}</span>
-                    </span>
-                    <span className="db-metric-trend-label">vs last month</span>
+
+                {/* By Category */}
+                <div
+                  className="db-card db-category-card"
+                  onMouseMove={handleCategoryMouseMove}
+                  onMouseLeave={() => setHoveredCategory(null)}
+                >
+                  <div className="db-card-title" style={{ marginBottom: '4px' }}>By Category</div>
+                  <div className="db-card-sub" style={{ marginBottom: '16px' }}>Project mix &amp; revenue</div>
+                  <div className="db-category-scroll-wrapper">
+                    <div className="db-category-body">
+                      <DonutChart hoveredCategory={hoveredCategory} setHoveredCategory={setHoveredCategory} />
+                      <div className="db-category-legend">
+                        {categoryBreakdownData.map((c, i) => (
+                          <div
+                            key={i}
+                            className={`db-cat-row ${hoveredCategory === i ? 'db-cat-row--active' : ''}`}
+                            onMouseEnter={() => setHoveredCategory(i)}
+                            onMouseLeave={() => setHoveredCategory(null)}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            <span className="db-legend-dot" style={{ background: c.color, flexShrink: 0 }}/>
+                            <span className="db-cat-name">{c.name}</span>
+                            <span className="db-cat-count">{c.count}</span>
+                            <span className="db-cat-rev">{c.revenue}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                )}
-              </div>
-            ))}
-          </div>
 
-          {/* ── ROW 2: BOTTOM METRICS ──────────────── */}
-          <div className="db-metrics-row2">
-            {bottomMetrics.map((m, i) => (
-              <div key={i} className="db-metric-card2">
-                <div className={`db-metric2-icon db-metric-icon--${m.type}`}>
-                  {m.icon}
-                </div>
-                <div>
-                  <div className="db-metric-label">{m.label}</div>
-                  <div className="db-metric-value2">{m.value}</div>
+                  {hoveredCategory !== null && (
+                    <div
+                      className="db-category-tooltip"
+                      style={{
+                        left: `${Math.min(categoryMousePos.x + 12, 175)}px`,
+                        top: `${Math.max(10, categoryMousePos.y - 38)}px`,
+                      }}
+                    >
+                      {categoryBreakdownData[hoveredCategory].fullName}: {categoryBreakdownData[hoveredCategory].count} Projects
+                    </div>
+                  )}
                 </div>
               </div>
-            ))}
-          </div>
 
-          {/* ── ROW 3: CHARTS ──────────────────────── */}
-          <div className="db-charts-row">
-            {/* Revenue Overview */}
-            <div className="db-card db-chart-card">
-              <div className="db-card-header">
-                <div>
-                  <div className="db-card-title">Revenue Overview</div>
-                  <div className="db-card-sub">Collected vs outstanding — last 6 months</div>
+              {/* ── ROW 4: PROJECTS + DEADLINES ────────── */}
+              <div className="db-bottom-row">
+                {/* Active Projects Table */}
+                <div className="db-card db-projects-card">
+                  <div className="db-card-header" style={{ marginBottom: '12px' }}>
+                    <div>
+                      <div className="db-card-title">Active Projects</div>
+                      <div className="db-card-sub">Highest-priority engagements</div>
+                    </div>
+                    <button
+                      type="button"
+                      className="db-view-all"
+                      onClick={() => handleNavChange('projects')}
+                    >
+                      View All <IconChevronRight />
+                    </button>
+                  </div>
+                  <div className="db-table-wrapper">
+                    <table className="db-table">
+                      <thead>
+                        <tr>
+                          <th>Project</th>
+                          <th>Category</th>
+                          <th>Status</th>
+                          <th>Deadline</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {activeProjects.map((p, i) => (
+                          <tr
+                            key={p.id || i}
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => setSelectedProject(p)}
+                          >
+                            <td>
+                              <div className="db-proj-name">{p.name}</div>
+                              <div className="db-proj-client">{p.client}</div>
+                            </td>
+                            <td>
+                              <span className="db-cat-pill">{p.category}</span>
+                            </td>
+                            <td>
+                              <StatusBadge
+                                status={p.status || 'Active'}
+                              />
+                            </td>
+                            <td className="db-table-date">{p.deadline}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-                <div className="db-chart-legend">
-                  <span className="db-legend-dot" style={{ background: '#0C61CF' }}/> Revenue
-                  <span className="db-legend-dot" style={{ background: '#F59E0B', marginLeft: '12px' }}/> Outstanding
-                </div>
-              </div>
-              <div className="db-chart-scroll-wrapper">
-                <RevenueChart />
-              </div>
-            </div>
 
-            {/* By Category */}
-            <div
-              className="db-card db-category-card"
-              onMouseMove={handleCategoryMouseMove}
-              onMouseLeave={() => setHoveredCategory(null)}
-            >
-              <div className="db-card-title" style={{ marginBottom: '4px' }}>By Category</div>
-              <div className="db-card-sub" style={{ marginBottom: '16px' }}>Project mix &amp; revenue</div>
-              <div className="db-category-scroll-wrapper">
-                <div className="db-category-body">
-                  <DonutChart hoveredCategory={hoveredCategory} setHoveredCategory={setHoveredCategory} />
-                  <div className="db-category-legend">
-                    {categoryData.map((c, i) => (
-                      <div
-                        key={i}
-                        className={`db-cat-row ${hoveredCategory === i ? 'db-cat-row--active' : ''}`}
-                        onMouseEnter={() => setHoveredCategory(i)}
-                        onMouseLeave={() => setHoveredCategory(null)}
-                        style={{ cursor: 'pointer' }}
-                      >
-                        <span className="db-legend-dot" style={{ background: c.color, flexShrink: 0 }}/>
-                        <span className="db-cat-name">{c.name}</span>
-                        <span className="db-cat-count">{c.count}</span>
-                        <span className="db-cat-rev">{c.revenue}</span>
+                {/* Upcoming Deadlines */}
+                <div className="db-card db-deadlines-card">
+                  <div className="db-card-header" style={{ marginBottom: '12px' }}>
+                    <div>
+                      <div className="db-card-title">Upcoming Deadlines</div>
+                      <div className="db-card-sub">Next 14 days</div>
+                    </div>
+                    <button
+                      type="button"
+                      className="db-view-all"
+                      onClick={() => handleNavChange('deadlines')}
+                    >
+                      View All <IconChevronRight />
+                    </button>
+                  </div>
+                  <div className="db-deadlines-list">
+                    {dashboardDeadlines.map((d, i) => (
+                      <div key={i} className="db-deadline-item">
+                        <div className="db-deadline-badge" style={{ background: d.color + '20', color: d.color }}>
+                          {d.daysLeft}d
+                        </div>
+                        <div>
+                          <div className="db-deadline-name">{d.label}</div>
+                          <div className="db-deadline-sub">{d.sub}</div>
+                        </div>
                       </div>
                     ))}
                   </div>
                 </div>
               </div>
 
-              {/* Interactive Tooltip Card that follows cursor movement */}
-              {hoveredCategory !== null && (
-                <div
-                  className="db-category-tooltip"
-                  style={{
-                    left: `${Math.min(categoryMousePos.x + 12, 175)}px`,
-                    top: `${Math.max(10, categoryMousePos.y - 38)}px`,
-                  }}
-                >
-                  {categoryData[hoveredCategory].fullName}: {categoryData[hoveredCategory].count} Projects
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* ── ROW 4: PROJECTS + DEADLINES ────────── */}
-          <div className="db-bottom-row">
-            {/* Active Projects Table */}
-            <div className="db-card db-projects-card">
-              <div className="db-card-header" style={{ marginBottom: '12px' }}>
-                <div>
-                  <div className="db-card-title">Active Projects</div>
-                  <div className="db-card-sub">Highest-priority engagements</div>
-                </div>
-                <button
-                  type="button"
-                  className="db-view-all"
-                  onClick={() => setActiveNav('projects')}
-                >
-                  View All <IconChevronRight />
-                </button>
-              </div>
-              <div className="db-table-wrapper">
-                <table className="db-table">
-                  <thead>
-                    <tr>
-                      <th>Project</th>
-                      <th>Category</th>
-                      <th>Status</th>
-                      <th>Deadline</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {activeProjects.map((p, i) => (
-                      <tr
-                        key={p.id || i}
-                        style={{ cursor: 'pointer' }}
-                        onClick={() => setSelectedProject(p)}
-                      >
-                        <td>
-                        <div className="db-proj-name">{p.name}</div>
-                        <div className="db-proj-client">{p.client}</div>
-                      </td>
-                      <td>
-                        <span className="db-cat-pill">{p.category}</span>
-                      </td>
-                      <td>
-                        <StatusBadge
-                          status={p.status || 'Active'}
-                          color={p.statusColor || '#0C61CF'}
-                          bg={p.statusBg || '#EFF6FF'}
-                        />
-                      </td>
-                      <td className="db-table-date">{p.deadline}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-            {/* Upcoming Deadlines */}
-            <div className="db-card db-deadlines-card">
-              <div className="db-card-header" style={{ marginBottom: '12px' }}>
-                <div>
-                  <div className="db-card-title">Upcoming Deadlines</div>
-                  <div className="db-card-sub">Next 14 days</div>
-                </div>
-                <button
-                  type="button"
-                  className="db-view-all"
-                  onClick={() => setActiveNav('deadlines')}
-                >
-                  View All <IconChevronRight />
-                </button>
-              </div>
-              <div className="db-deadlines-list">
-                {deadlines.map((d, i) => (
-                  <div key={i} className="db-deadline-item">
-                    <div className="db-deadline-badge" style={{ background: d.color + '20', color: d.color }}>
-                      {d.daysLeft}d
-                    </div>
+              {/* ── ROW 5: TEAM WORKLOAD + ACTIVITY ────── */}
+              <div className="db-bottom-row">
+                {/* Team Workload */}
+                <div className="db-card db-workload-card">
+                  <div className="db-card-header" style={{ marginBottom: '16px' }}>
                     <div>
-                      <div className="db-deadline-name">{d.label}</div>
-                      <div className="db-deadline-sub">{d.sub}</div>
+                      <div className="db-card-title">Team Workload</div>
+                      <div className="db-card-sub">Active tasks per member</div>
                     </div>
+                    <button
+                      type="button"
+                      className="db-view-all"
+                      onClick={() => handleNavChange('team')}
+                    >
+                      Manage <IconChevronRight />
+                    </button>
                   </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* ── ROW 5: TEAM WORKLOAD + ACTIVITY ────── */}
-          <div className="db-bottom-row">
-            {/* Team Workload */}
-            <div className="db-card db-workload-card">
-              <div className="db-card-header" style={{ marginBottom: '16px' }}>
-                <div>
-                  <div className="db-card-title">Team Workload</div>
-                  <div className="db-card-sub">Active tasks per member</div>
-                </div>
-                <button
-                  type="button"
-                  className="db-view-all"
-                  onClick={() => setActiveNav('team')}
-                >
-                  Manage <IconChevronRight />
-                </button>
-              </div>
-              <div className="db-workload-list">
-                {teamWorkload.map((m, i) => (
-                  <div key={i} className="db-workload-item">
-                    <Avatar initials={m.initials} gradient={avatarColors[i % avatarColors.length]} size={32} />
-                    <div className="db-workload-details">
-                      <div className="db-workload-name">{m.name}</div>
-                      <ProgressBar pct={m.pct} color={m.color} />
-                    </div>
-                    <span className="db-workload-count">{m.tasks}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Recent Activity */}
-            <div className="db-card db-activity-card">
-              <div className="db-card-header" style={{ marginBottom: '16px' }}>
-                <div>
-                  <div className="db-card-title">Recent Activity</div>
-                  <div className="db-card-sub">Across all projects</div>
-                </div>
-              </div>
-              <div className="db-activity-list">
-                {activityList.map((a, i) => (
-                  <div key={i} className="db-activity-item">
-                    <Avatar initials={a.initials} gradient={a.color} size={32} />
-                    <div>
-                      <div className="db-activity-text">
-                        <span className="db-activity-name">{a.name}</span>{' '}
-                        <span className="db-activity-action">{a.action}</span>
+                  <div className="db-workload-list">
+                    {dashboardTeamWorkload.map((m, i) => (
+                      <div key={i} className="db-workload-item">
+                        <Avatar initials={m.initials} gradient={avatarColors[i % avatarColors.length]} size={32} />
+                        <div className="db-workload-details">
+                          <div className="db-workload-name">{m.name}</div>
+                          <ProgressBar pct={m.pct} color={m.color} />
+                        </div>
+                        <span className="db-workload-count">{m.tasks}</span>
                       </div>
-                      <div className="db-activity-sub">{a.sub}</div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Recent Activity */}
+                <div className="db-card db-activity-card">
+                  <div className="db-card-header" style={{ marginBottom: '16px' }}>
+                    <div>
+                      <div className="db-card-title">Recent Activity</div>
+                      <div className="db-card-sub">Across all projects</div>
                     </div>
                   </div>
-                ))}
+                  <div className="db-activity-list">
+                    {activityList.map((a, i) => (
+                      <div key={i} className="db-activity-item">
+                        <Avatar initials={a.initials} gradient={a.color} size={32} />
+                        <div>
+                          <div className="db-activity-text">
+                            <span className="db-activity-name">{a.name}</span>{' '}
+                            <span className="db-activity-action">{a.action}</span>
+                          </div>
+                          <div className="db-activity-sub">{a.sub}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-        </>
-      )}
-    </main>
+            </>
+          )}
+        </main>
 
-        {/* ── NEW PROJECT POPUP MODAL ── */}
+        {/* ── NEW PROJECT MODAL ── */}
         {isNewProjectOpen && (
           <NewProjectModal
             onClose={() => setIsNewProjectOpen(false)}
@@ -1826,22 +1509,18 @@ export default function DashboardPage({ onLogout, currentUser }) {
           />
         )}
 
-        {/* ── SETTINGS / PROFILE POPUP MODAL ── */}
+        {/* ── SETTINGS / PROFILE MODAL ── */}
         <SettingsModal
           isOpen={isSettingsOpen}
           onClose={() => setIsSettingsOpen(false)}
           userProfile={userProfile}
           onSave={(updated) => {
-            setUserProfile(updated);
-            try {
-              localStorage.setItem('agencyos_user_profile', JSON.stringify(updated));
-            } catch (e) {
-              console.warn('Failed to save profile:', e);
-            }
+            const saved = saveStoredUserProfile(updated);
+            setUserProfile(saved);
           }}
         />
 
-        {/* ── LOGOUT CONFIRMATION POPUP MODAL ── */}
+        {/* ── LOGOUT CONFIRMATION MODAL ── */}
         {isLogoutModalOpen && (
           <div className="db-logout-overlay" onClick={() => setIsLogoutModalOpen(false)}>
             <div className="db-logout-modal" onClick={(e) => e.stopPropagation()}>
@@ -1882,82 +1561,48 @@ export default function DashboardPage({ onLogout, currentUser }) {
           </div>
         )}
 
-        {/* ── MOBILE NAVIGATION DRAWER OVERLAY ── */}
+        {/* ── MOBILE NAVIGATION DRAWER ── */}
         {isMobileMenuOpen && (
           <div className="db-mobile-drawer-overlay" onClick={() => setIsMobileMenuOpen(false)}>
             <div className="db-mobile-drawer" onClick={(e) => e.stopPropagation()}>
               <div className="db-mobile-drawer-header">
                 <div className="db-sidebar-brand">
                   <IconLogo />
-                  <span className="db-sidebar-name">AgencyOS</span>
+                  <span className="db-sidebar-name">{brandingConfig.brandName}</span>
                 </div>
                 <button
                   type="button"
                   className="db-mobile-menu-close"
                   onClick={() => setIsMobileMenuOpen(false)}
                   title="Close Menu"
+                  aria-label="Close menu"
                 >
                   <IconClose />
                 </button>
               </div>
 
               <nav className="db-mobile-nav">
-                <a
-                  href="#dashboard"
-                  className={`db-nav-item ${activeNav === 'dashboard' ? 'db-nav-item--active' : ''}`}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setActiveNav('dashboard');
-                    setSelectedProject(null);
-                    setIsMobileMenuOpen(false);
-                  }}
-                >
-                  <span className="db-nav-icon"><IconDashboard /></span>
-                  <span className="db-nav-label">Dashboard</span>
-                </a>
-
-                <a
-                  href="#projects"
-                  className={`db-nav-item ${activeNav === 'projects' ? 'db-nav-item--active' : ''}`}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setActiveNav('projects');
-                    setSelectedProject(null);
-                    setIsMobileMenuOpen(false);
-                  }}
-                >
-                  <span className="db-nav-icon"><IconProjects /></span>
-                  <span className="db-nav-label">Projects</span>
-                </a>
-
-                <a
-                  href="#team"
-                  className={`db-nav-item ${activeNav === 'team' ? 'db-nav-item--active' : ''}`}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setActiveNav('team');
-                    setSelectedProject(null);
-                    setIsMobileMenuOpen(false);
-                  }}
-                >
-                  <span className="db-nav-icon"><IconTeam /></span>
-                  <span className="db-nav-label">Team</span>
-                </a>
-
-                <a
-                  href="#deadlines"
-                  className={`db-nav-item db-nav-item--deadlines ${activeNav === 'deadlines' ? 'db-nav-item--active' : ''}`}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setActiveNav('deadlines');
-                    setSelectedProject(null);
-                    setIsMobileMenuOpen(false);
-                  }}
-                >
-                  <span className="db-nav-icon"><IconDeadlines /></span>
-                  <span className="db-nav-label">Deadlines</span>
-                  <span className="db-nav-badge">{deadlinesCount}</span>
-                </a>
+                {navItems.map((item) => {
+                  const isActive = activeNav === item.key;
+                  return (
+                    <a
+                      key={item.key}
+                      href={item.hash}
+                      className={`db-nav-item ${item.key === 'deadlines' ? 'db-nav-item--deadlines' : ''} ${isActive ? 'db-nav-item--active' : ''}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleNavChange(item.key);
+                        setIsMobileMenuOpen(false);
+                      }}
+                    >
+                      <span className="db-nav-icon">{getNavIcon(item.icon)}</span>
+                      <span className="db-nav-label">{item.label}</span>
+                      {item.badgeKey && (
+                        <span className="db-nav-badge">{deadlinesCount}</span>
+                      )}
+                    </a>
+                  );
+                })}
               </nav>
 
               <div className="db-mobile-drawer-bottom">
@@ -1969,7 +1614,7 @@ export default function DashboardPage({ onLogout, currentUser }) {
                   }}
                   title="Customize profile"
                 >
-                  <div className="db-user-avatar">{userProfile.initials}</div>
+                  <div className="db-user-avatar">{userProfile.initials || getInitials(userProfile.name)}</div>
                   <div className="db-user-info">
                     <div className="db-user-name">{userProfile.name}</div>
                     <div className="db-user-role">{userProfile.role}</div>
