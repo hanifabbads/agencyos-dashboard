@@ -4498,14 +4498,15 @@ body {
 .npm-modal {
   width: 100%;
   max-width: 600px;
-  background: #ffffff;
-  border-radius: 24px;
+  background: var(--bg-primary, #ffffff);
+  border-radius: 20px;
   box-shadow: 0px 20px 24px -4px rgba(16, 24, 40, 0.1), 0px 8px 8px -4px rgba(16, 24, 40, 0.04);
   display: flex;
   flex-direction: column;
   overflow: hidden;
   animation: npmSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  max-height: 92vh;
+  max-height: 90vh;
+  box-sizing: border-box;
 }
 
 @keyframes npmSlideUp {
@@ -4523,7 +4524,10 @@ body {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  padding: 24px 24px 16px 24px;
+  padding: 20px 24px 16px 24px;
+  border-bottom: 1px solid var(--border-subtle, #e9eaeb);
+  background-color: var(--bg-primary, #ffffff);
+  flex-shrink: 0;
 }
 
 [data-theme="dark"] .npm-header {
@@ -4580,11 +4584,26 @@ body {
 }
 
 .npm-form-body {
-  padding: 24px 24px 16px 24px;
+  padding: 20px 24px;
   display: flex;
   flex-direction: column;
   gap: 16px;
   overflow-y: auto;
+}
+
+/* ── Grid Layouts for New Project Modal ── */
+.npm-grid-2col {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  width: 100%;
+}
+
+.npm-grid-3col {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  width: 100%;
 }
 
 .npm-row {
@@ -4605,6 +4624,7 @@ body {
   flex-direction: column;
   gap: 6px;
   position: relative;
+  width: 100%;
 }
 
 .npm-label {
@@ -4703,6 +4723,12 @@ body {
   padding: 4px;
 }
 
+[data-theme="dark"] .npm-custom-dropdown-menu {
+  background-color: #14161b;
+  border-color: #22262f;
+  box-shadow: 0px 10px 15px -3px rgba(0, 0, 0, 0.6);
+}
+
 .npm-dropdown-option {
   padding: 8px 12px;
   font-family: 'Geist', sans-serif;
@@ -4713,8 +4739,16 @@ body {
   transition: background-color 0.12s ease;
 }
 
+[data-theme="dark"] .npm-dropdown-option {
+  color: #f4f5f7;
+}
+
 .npm-dropdown-option:hover {
   background-color: var(--bg-hover, #f1f5f9);
+}
+
+[data-theme="dark"] .npm-dropdown-option:hover {
+  background-color: #22262f;
 }
 
 .npm-dropdown-option.is-selected {
@@ -4723,9 +4757,15 @@ body {
   font-weight: 500;
 }
 
+[data-theme="dark"] .npm-dropdown-option.is-selected {
+  background-color: rgba(12, 97, 207, 0.2);
+  color: #3a7fd8;
+}
+
 [data-theme="dark"] .npm-input,
 [data-theme="dark"] .npm-select,
-[data-theme="dark"] .npm-textarea {
+[data-theme="dark"] .npm-textarea,
+[data-theme="dark"] .npm-custom-select-control {
   background-color: #0c0e12;
   border-color: #383a41;
   color: #f4f5f7;
@@ -4760,9 +4800,9 @@ body {
 }
 
 [data-theme="dark"] .npm-action-btn {
-  background: #ffffff;
-  color: #0c61cf;
-  border: none;
+  background: #22262f;
+  color: #3a7fd8;
+  border: 1px solid #383a41;
 }
 
 /* ── Budget Input Group (Figma Node 21144:14438) ── */
@@ -4941,10 +4981,14 @@ body {
 
 .npm-footer {
   display: flex;
+  align-items: center;
+  justify-content: flex-end;
   gap: 12px;
   padding: 16px 24px 20px 24px;
   box-sizing: border-box;
-  border-top: 1px solid var(--border-color, #e9eaeb);
+  border-top: 1px solid var(--border-subtle, #e9eaeb);
+  background-color: var(--bg-primary, #ffffff);
+  flex-shrink: 0;
 }
 
 [data-theme="dark"] .npm-footer {
@@ -4953,11 +4997,11 @@ body {
 }
 
 .npm-btn-cancel {
-  flex: 1;
   height: 44px;
+  padding: 0 20px;
   border-radius: 10px;
   border: 1px solid var(--border-color, #d5d7da);
-  background: #ffffff;
+  background: var(--bg-primary, #ffffff);
   font-family: 'Geist', sans-serif;
   font-size: 14px;
   font-weight: 600;
@@ -4974,11 +5018,11 @@ body {
 }
 
 .npm-btn-submit {
-  flex: 1;
   height: 44px;
+  padding: 0 20px;
   border-radius: 10px;
   border: none;
-  background: #0c61cf;
+  background: var(--brand-primary, #0c61cf);
   font-family: 'Geist', sans-serif;
   font-size: 14px;
   font-weight: 600;
@@ -7338,9 +7382,12 @@ body {
     gap: 12px;
   }
 
+  .npm-grid-2col,
+  .npm-grid-3col,
   .npm-row-2,
   .npm-row-3,
   .npm-row {
+    grid-template-columns: 1fr !important;
     flex-direction: column !important;
     gap: 12px !important;
   }

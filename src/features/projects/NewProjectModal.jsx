@@ -105,13 +105,13 @@ function DateField({ value, onChange }) {
         className={`npm-input npm-date-input ${!value ? 'is-empty' : ''}`}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        required
       />
       <button
         type="button"
         className="npm-date-icon-btn"
         onClick={handleIconClick}
         title="Open Calendar"
+        aria-label="Open Calendar"
       >
         <IconCalendar />
       </button>
@@ -192,7 +192,7 @@ export default function NewProjectModal({ onClose, onCreateProject, initialData 
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="npm-form-body">
-          {/* Row 1: Project Name */}
+          {/* Row 1: Project Name (Full Width) */}
           <div className="npm-field-group">
             <label className="npm-label">
               Project Name <span className="npm-required">*</span>
@@ -207,53 +207,41 @@ export default function NewProjectModal({ onClose, onCreateProject, initialData 
             />
           </div>
 
-          {/* Row 2: Client or Company */}
-          <div className="npm-field-group">
-            <div className="npm-label-with-mode">
-              <label className="npm-label">Client / Company Name</label>
-              <div className="npm-mode-toggle">
+          {/* Row 2: Client & Category (2-Column Grid) */}
+          <div className="npm-grid-2col">
+            <div className="npm-field-group">
+              <label className="npm-label">
+                Client <span className="npm-required">*</span>
+              </label>
+              <div className="npm-input-with-action">
+                {fieldMode === 'client' ? (
+                  <CustomDropdown
+                    value={client}
+                    onChange={setClient}
+                    options={clientOptions}
+                    placeholder="Select Client..."
+                  />
+                ) : (
+                  <input
+                    type="text"
+                    className={`npm-input ${!client ? 'is-empty' : ''}`}
+                    placeholder="e.g. Acme International"
+                    value={client}
+                    onChange={(e) => setClient(e.target.value)}
+                  />
+                )}
                 <button
                   type="button"
-                  className={`npm-mode-btn ${fieldMode === 'client' ? 'is-active' : ''}`}
-                  onClick={() => setFieldMode('client')}
+                  className="npm-action-btn"
+                  onClick={() => setFieldMode(fieldMode === 'client' ? 'company' : 'client')}
+                  title={fieldMode === 'client' ? 'Enter Custom Client Name' : 'Select from Presets'}
+                  aria-label="Toggle client mode"
                 >
-                  Preset Client
-                </button>
-                <button
-                  type="button"
-                  className={`npm-mode-btn ${fieldMode === 'company' ? 'is-active' : ''}`}
-                  onClick={() => setFieldMode('company')}
-                >
-                  Custom
+                  <IconBuilding />
                 </button>
               </div>
             </div>
 
-            {fieldMode === 'client' ? (
-              <CustomDropdown
-                value={client}
-                onChange={setClient}
-                options={clientOptions}
-                placeholder="Select a client..."
-              />
-            ) : (
-              <div className="npm-input-with-icon">
-                <span className="npm-input-left-icon">
-                  <IconBuilding />
-                </span>
-                <input
-                  type="text"
-                  className={`npm-input npm-input-pad-left ${!client ? 'is-empty' : ''}`}
-                  placeholder="e.g. Acme Corp"
-                  value={client}
-                  onChange={(e) => setClient(e.target.value)}
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Row 3: Category & Project Manager */}
-          <div className="npm-grid-2col">
             <div className="npm-field-group">
               <label className="npm-label">
                 Category <span className="npm-required">*</span>
@@ -265,7 +253,10 @@ export default function NewProjectModal({ onClose, onCreateProject, initialData 
                 placeholder="Select Category..."
               />
             </div>
+          </div>
 
+          {/* Row 3: Project Manager & Budget (2-Column Grid) */}
+          <div className="npm-grid-2col">
             <div className="npm-field-group">
               <label className="npm-label">
                 Project Manager <span className="npm-required">*</span>
@@ -277,30 +268,35 @@ export default function NewProjectModal({ onClose, onCreateProject, initialData 
                 placeholder="Select PM..."
               />
             </div>
-          </div>
 
-          {/* Row 4: Budget & Status */}
-          <div className="npm-grid-2col">
             <div className="npm-field-group">
-              <label className="npm-label">Budget</label>
-              <div className="npm-budget-input-group">
-                <CustomDropdown
-                  value={currency}
-                  onChange={setCurrency}
-                  options={['IDR', 'USD', 'EUR']}
-                  placeholder="IDR"
-                  isCurrency={true}
-                />
+              <label className="npm-label">
+                Budget <span className="npm-required">*</span>
+              </label>
+              <div className="npm-budget-group">
+                <span className="npm-currency-prefix">{currencySymbols[currency] || 'Rp'}</span>
                 <input
                   type="text"
-                  className={`npm-input npm-budget-field ${!budget ? 'is-empty' : ''}`}
+                  className={`npm-budget-input ${!budget ? 'is-empty' : ''}`}
                   placeholder="10.000.000"
                   value={budget}
                   onChange={(e) => setBudget(e.target.value)}
                 />
+                <div className="npm-currency-wrapper">
+                  <CustomDropdown
+                    value={currency}
+                    onChange={setCurrency}
+                    options={['IDR', 'USD', 'EUR']}
+                    placeholder="IDR"
+                    isCurrency={true}
+                  />
+                </div>
               </div>
             </div>
+          </div>
 
+          {/* Row 4: Status + Start Date + Deadline (3-Column Grid) */}
+          <div className="npm-grid-3col">
             <div className="npm-field-group">
               <label className="npm-label">
                 Status <span className="npm-required">*</span>
@@ -309,14 +305,11 @@ export default function NewProjectModal({ onClose, onCreateProject, initialData 
                 value={status}
                 onChange={setStatus}
                 options={statusOptions}
-                placeholder="Select status..."
+                placeholder="Select Status..."
                 isStatus={true}
               />
             </div>
-          </div>
 
-          {/* Row 5: Dates */}
-          <div className="npm-grid-2col">
             <div className="npm-field-group">
               <label className="npm-label">Start Date</label>
               <DateField value={startDate} onChange={setStartDate} />
@@ -330,7 +323,7 @@ export default function NewProjectModal({ onClose, onCreateProject, initialData 
             </div>
           </div>
 
-          {/* Row 6: Description */}
+          {/* Row 5: Description (Full Width) */}
           <div className="npm-field-group">
             <label className="npm-label">Description (Optional)</label>
             <textarea
@@ -342,13 +335,13 @@ export default function NewProjectModal({ onClose, onCreateProject, initialData 
             />
           </div>
 
-          {/* Form Actions */}
-          <div className="npm-actions">
+          {/* Footer (Cancel + Create Project) */}
+          <div className="npm-footer">
             <button type="button" className="npm-btn-cancel" onClick={onClose}>
               Cancel
             </button>
             <button type="submit" className="npm-btn-submit">
-              {isEdit ? 'Save Changes' : 'Create Project'}
+              {isEdit ? 'Save Changes' : '+ Create Project'}
             </button>
           </div>
         </form>
