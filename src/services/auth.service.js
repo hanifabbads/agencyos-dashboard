@@ -1,8 +1,8 @@
 /**
- * AgencyOS — Authentication Service Abstraction
+ * AgencyOS — Authentication Service
  *
- * Provides a unified API for authentication across Demo/Mock, Firebase,
- * and future backend adapters (such as Supabase or custom REST APIs).
+ * Provides robust authentication support for Firebase Authentication (Google OAuth & Email/Password)
+ * and zero-config local development demo mode.
  */
 
 import { appConfig } from '../config/app.config.js';
@@ -13,12 +13,51 @@ import {
   updateProfile,
   signInWithPopup,
   GoogleAuthProvider,
-  OAuthProvider,
   signOut as firebaseSignOut,
   onAuthStateChanged,
 } from 'firebase/auth';
 
 const STORAGE_KEYS = appConfig.storageKeys;
+
+/**
+ * Check if Firebase is the active authentication provider.
+ * Returns true if:
+ * 1. Explicitly configured as 'firebase', OR
+ * 2. Firebase credentials exist in the environment (e.g. on Vercel) and provider is not 'supabase'.
+ */
+export function isUsingFirebase() {
+  const env = (typeof import.meta !== 'undefined' && import.meta.env)
+    ? import.meta.env
+    : (typeof process !== 'undefined' && process.env)
+      ? process.env
+      : {};
+  const explicit = env.VITE_AUTH_PROVIDER || appConfig.authProvider;
+  if (explicit === 'supabase') return false;
+  if (explicit === 'firebase') return true;
+  if (isFirebaseConfigured && firebaseAuth) return true;
+  return false;
+}
+
+/**
+ * Safe, privacy-preserving diagnostics for debugging deployment auth states.
+ * (Never logs actual API keys or secret values).
+ */
+export function getAuthDiagnostics() {
+  const env = (typeof import.meta !== 'undefined' && import.meta.env)
+    ? import.meta.env
+    : (typeof process !== 'undefined' && process.env)
+      ? process.env
+      : {};
+  return {
+    provider: appConfig.authProvider,
+    isUsingFirebase: isUsingFirebase(),
+    isFirebaseConfigured: isFirebaseConfigured,
+    hasApiKey: Boolean(env.VITE_FIREBASE_API_KEY),
+    hasAuthDomain: Boolean(env.VITE_FIREBASE_AUTH_DOMAIN),
+    hasProjectId: Boolean(env.VITE_FIREBASE_PROJECT_ID),
+    isProduction: Boolean(env.PROD || (typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'production')),
+  };
+}
 
 /**
  * Generate 2-character initials from a full name.
@@ -100,7 +139,7 @@ export function isAuthenticated() {
 }
 
 /**
- * Format Firebase and authentication error codes into user-friendly messages
+ * Format Firebase and authentication error codes into clear, user-friendly messages
  */
 export function formatAuthErrorMessage(error, provider = null) {
   if (!error) return 'An unexpected error occurred. Please try again.';
@@ -118,16 +157,16 @@ export function formatAuthErrorMessage(error, provider = null) {
     return 'The authentication popup request was cancelled. Please try again.';
   }
   if (code === 'auth/unauthorized-domain') {
-    return 'This domain is not authorized in your Firebase project. Please add it under Firebase Console > Authentication > Settings > Authorized domains.';
+    return 'This domain is not authorized in your Firebase project. Please add your current domain (including Vercel deployment URL) under Firebase Console > Authentication > Settings > Authorized domains.';
   }
   if (code === 'auth/operation-not-allowed') {
     if (provider === 'google') {
       return 'Google sign-in is not enabled in your Firebase project. Please enable Google under Authentication > Sign-in method in Firebase Console.';
     }
-    if (provider === 'apple') {
-      return 'Apple sign-in is not enabled in your Firebase project. Please configure Apple under Authentication > Sign-in method in Firebase Console.';
-    }
     return 'This authentication provider is not enabled in your Firebase Authentication settings.';
+  }
+  if (code === 'auth/invalid-api-key') {
+    return 'Invalid Firebase API key. Please check your VITE_FIREBASE_API_KEY environment variable.';
   }
   if (code === 'auth/account-exists-with-different-credential') {
     return 'An account already exists with the same email address using a different sign-in provider.';
@@ -153,15 +192,9 @@ export function formatAuthErrorMessage(error, provider = null) {
   if (code === 'auth/network-request-failed') {
     return 'Network connection error. Please check your internet connection and try again.';
   }
-  if (code === 'auth/configuration-not-found' || code === 'auth/invalid-oauth-provider') {
-    if (provider === 'apple') {
-      return 'Apple sign-in is not configured correctly in Firebase. Please check your Firebase Apple OAuth credentials.';
-    }
-    return 'OAuth provider is not configured properly in Firebase. Please check your Authentication settings.';
-  }
 
-  // Return clean message for custom errors (e.g. missing environment variables)
-  if (message.includes('Firebase credentials are not configured')) {
+  // Return clean message for custom configuration errors
+  if (message.includes('Firebase credentials are not configured') || message.includes('Google Sign-In requires Firebase')) {
     return message;
   }
 
@@ -172,10 +205,9 @@ export function formatAuthErrorMessage(error, provider = null) {
  * Sign In with Email & Password
  */
 export async function signIn(email, password) {
-  // If Firebase Mode is enabled
-  if (appConfig.authProvider === 'firebase') {
+  if (isUsingFirebase()) {
     if (!isFirebaseConfigured || !firebaseAuth) {
-      throw new Error('Firebase credentials are not configured. Please add your Firebase configuration to .env or set VITE_AUTH_PROVIDER="demo".');
+      throw new Error('Firebase credentials are not configured. Please add your Firebase configuration to environment variables.');
     }
 
     const userCredential = await signInWithEmailAndPassword(firebaseAuth, email, password);
@@ -191,7 +223,12 @@ export async function signIn(email, password) {
     return user;
   }
 
-  // Demo / Mock Mode
+  // Demo Mode (Available only in local development when Firebase is not configured)
+  const isProd = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.PROD;
+  if (isProd) {
+    throw new Error('Authentication requires Firebase configuration. Please configure VITE_FIREBASE_* environment variables in your deployment.');
+  }
+
   const displayName = email ? email.split('@')[0] : 'Agency Owner';
   const formattedName = displayName.charAt(0).toUpperCase() + displayName.slice(1);
   const mockUser = {
@@ -213,10 +250,9 @@ export async function signIn(email, password) {
  * Sign Up / Register Account
  */
 export async function signUp(username, email, password) {
-  // If Firebase Mode is enabled
-  if (appConfig.authProvider === 'firebase') {
+  if (isUsingFirebase()) {
     if (!isFirebaseConfigured || !firebaseAuth) {
-      throw new Error('Firebase credentials are not configured. Please add your Firebase configuration to .env or set VITE_AUTH_PROVIDER="demo".');
+      throw new Error('Firebase credentials are not configured. Please add your Firebase configuration to environment variables.');
     }
 
     const userCredential = await createUserWithEmailAndPassword(firebaseAuth, email, password);
@@ -238,7 +274,12 @@ export async function signUp(username, email, password) {
     return { ...userCredential.user, displayName };
   }
 
-  // Demo / Mock Mode
+  // Demo Mode (Available only in local development when Firebase is not configured)
+  const isProd = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.PROD;
+  if (isProd) {
+    throw new Error('Registration requires Firebase configuration. Please configure VITE_FIREBASE_* environment variables in your deployment.');
+  }
+
   const cleanUsername = username ? username.trim() : (email ? email.split('@')[0] : 'Agency Owner');
   const mockUser = {
     uid: `demo-user-${Date.now()}`,
@@ -256,26 +297,27 @@ export async function signUp(username, email, password) {
 }
 
 /**
- * Google Social Sign In / Up
+ * Google Social Sign In
+ * Strictly triggers Firebase GoogleAuthProvider popup.
+ * Never silently enters the dashboard without successful OAuth resolution.
  */
 export async function signInWithGoogle() {
-  // If Firebase Mode is enabled: strictly execute Firebase OAuth
-  if (appConfig.authProvider === 'firebase') {
+  if (isUsingFirebase()) {
     if (!isFirebaseConfigured || !firebaseAuth) {
-      throw new Error('Firebase credentials are not configured. Please add your Firebase configuration to .env or set VITE_AUTH_PROVIDER="demo".');
+      throw new Error('Firebase credentials are not configured. Please ensure VITE_FIREBASE_API_KEY and VITE_FIREBASE_PROJECT_ID are set in your environment variables.');
     }
 
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
     
-    // Execute real Firebase popup OAuth without silent catch-to-demo fallback
+    // Execute real Firebase popup OAuth
     const result = await signInWithPopup(firebaseAuth, provider);
     const user = result.user;
     const displayName = user.displayName || (user.email ? user.email.split('@')[0] : 'Google User');
     
     saveStoredUserProfile({
       name: displayName,
-      email: user.email || 'google.user@agencyos.app',
+      email: user.email || 'user@agencyos.app',
       initials: getInitials(displayName),
       avatar: user.photoURL || null,
     });
@@ -283,70 +325,21 @@ export async function signInWithGoogle() {
     return user;
   }
 
-  // Demo Mode: Mock instant login for local evaluation
-  const mockUser = {
-    uid: 'google-demo-uid',
-    displayName: 'Google Demo User',
-    email: 'google.user@agencyos.app',
-  };
-  saveStoredUserProfile({
-    name: mockUser.displayName,
-    email: mockUser.email,
-    initials: 'GU',
-  });
-  localStorage.setItem(STORAGE_KEYS.auth, 'true');
-  return mockUser;
-}
-
-/**
- * Apple Social Sign In / Up
- */
-export async function signInWithApple() {
-  // If Firebase Mode is enabled: strictly execute Firebase Apple OAuth
-  if (appConfig.authProvider === 'firebase') {
-    if (!isFirebaseConfigured || !firebaseAuth) {
-      throw new Error('Firebase credentials are not configured. Please add your Firebase configuration to .env or set VITE_AUTH_PROVIDER="demo".');
-    }
-
-    const provider = new OAuthProvider('apple.com');
-    provider.addScope('email');
-    provider.addScope('name');
-    
-    // Execute real Firebase popup OAuth without silent catch-to-demo fallback
-    const result = await signInWithPopup(firebaseAuth, provider);
-    const user = result.user;
-    const displayName = user.displayName || (user.email ? user.email.split('@')[0] : 'Apple User');
-    
-    saveStoredUserProfile({
-      name: displayName,
-      email: user.email || 'apple.user@agencyos.app',
-      initials: getInitials(displayName),
-      avatar: user.photoURL || null,
-    });
-    localStorage.setItem(STORAGE_KEYS.auth, 'true');
-    return user;
+  // In production, NEVER mock Google authentication
+  const isProd = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.PROD;
+  if (isProd) {
+    throw new Error('Google Sign-In requires Firebase configuration. Please configure VITE_FIREBASE_* environment variables in your Vercel Project Settings.');
   }
 
-  // Demo Mode: Mock instant login for local evaluation
-  const mockUser = {
-    uid: 'apple-demo-uid',
-    displayName: 'Apple Demo User',
-    email: 'apple.user@agencyos.app',
-  };
-  saveStoredUserProfile({
-    name: mockUser.displayName,
-    email: mockUser.email,
-    initials: 'AU',
-  });
-  localStorage.setItem(STORAGE_KEYS.auth, 'true');
-  return mockUser;
+  // In local development demo mode without Firebase credentials
+  throw new Error('Google Sign-In requires Firebase configuration. Please add your Firebase credentials to .env or use Email sign-in for Demo mode.');
 }
 
 /**
  * Log Out
  */
 export async function logout() {
-  if (appConfig.authProvider === 'firebase' && isFirebaseConfigured && firebaseAuth) {
+  if (isUsingFirebase() && isFirebaseConfigured && firebaseAuth) {
     try {
       await firebaseSignOut(firebaseAuth);
     } catch (err) {
@@ -363,10 +356,10 @@ export async function logout() {
 }
 
 /**
- * Listen to auth state changes (optional subscriber)
+ * Listen to auth state changes
  */
 export function subscribeToAuthState(callback) {
-  if (appConfig.authProvider === 'firebase' && isFirebaseConfigured && firebaseAuth) {
+  if (isUsingFirebase() && isFirebaseConfigured && firebaseAuth) {
     return onAuthStateChanged(firebaseAuth, (firebaseUser) => {
       if (firebaseUser) {
         const displayName = firebaseUser.displayName || (firebaseUser.email ? firebaseUser.email.split('@')[0] : 'Agency Owner');
@@ -380,7 +373,7 @@ export function subscribeToAuthState(callback) {
         localStorage.setItem(STORAGE_KEYS.auth, 'true');
         callback(profile);
       } else {
-        if (localStorage.getItem(STORAGE_KEYS.auth) === 'true' && !getStoredUserProfile()?.email?.includes('demo')) {
+        if (localStorage.getItem(STORAGE_KEYS.auth) === 'true') {
           localStorage.removeItem(STORAGE_KEYS.auth);
           localStorage.removeItem(STORAGE_KEYS.userProfile);
           callback(null);
@@ -399,6 +392,8 @@ export function subscribeToAuthState(callback) {
 }
 
 export default {
+  isUsingFirebase,
+  getAuthDiagnostics,
   getInitials,
   getDefaultUserProfile,
   getStoredUserProfile,
@@ -408,7 +403,6 @@ export default {
   signIn,
   signUp,
   signInWithGoogle,
-  signInWithApple,
   logout,
   subscribeToAuthState,
 };

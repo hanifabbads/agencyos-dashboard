@@ -10,7 +10,12 @@ import { getAuth } from "firebase/auth";
 import { getAnalytics, isSupported } from "firebase/analytics";
 
 // Read environment variables safely
-const env = (typeof import.meta !== 'undefined' && import.meta.env) ? import.meta.env : {};
+const env = (typeof import.meta !== 'undefined' && import.meta.env)
+  ? import.meta.env
+  : (typeof process !== 'undefined' && process.env)
+    ? process.env
+    : {};
+
 const firebaseConfig = {
   apiKey: env.VITE_FIREBASE_API_KEY || "",
   authDomain: env.VITE_FIREBASE_AUTH_DOMAIN || "",

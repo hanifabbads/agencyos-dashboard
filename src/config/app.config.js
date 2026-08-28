@@ -5,14 +5,35 @@
  * currency formats, pagination, and feature toggles.
  */
 
+/**
+ * Resolves the active authentication provider mode: 'firebase' | 'demo' | 'supabase'
+ * 1. Honors explicit VITE_AUTH_PROVIDER if defined ('firebase', 'demo', or 'supabase').
+ * 2. If undefined, automatically activates 'firebase' when Firebase credentials exist in the environment (e.g. on Vercel).
+ * 3. Falls back to 'demo' for zero-config local development.
+ */
+function resolveAuthProvider() {
+  const env = (typeof import.meta !== 'undefined' && import.meta.env)
+    ? import.meta.env
+    : (typeof process !== 'undefined' && process.env)
+      ? process.env
+      : {};
+
+  if (env.VITE_AUTH_PROVIDER) {
+    return env.VITE_AUTH_PROVIDER;
+  }
+  if (env.VITE_FIREBASE_API_KEY && env.VITE_FIREBASE_PROJECT_ID) {
+    return 'firebase';
+  }
+  return 'demo';
+}
+
 export const appConfig = {
   // Application identity
   name: 'AgencyOS',
   version: '1.0.0',
 
   // Authentication provider mode: 'demo' | 'firebase' | 'supabase'
-  // When 'demo', the app runs with local state and localStorage persistence without any external dependencies.
-  authProvider: (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_AUTH_PROVIDER) || 'demo',
+  authProvider: resolveAuthProvider(),
 
   // Default theme: 'light' | 'dark'
   defaultTheme: 'light',
